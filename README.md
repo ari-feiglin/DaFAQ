@@ -3,6 +3,8 @@
 The DaFAQ (**Da**tabase **F**ind **A**nd **Q**uery) database system is a work-in-progress system for managing DaFAQ databases. <br />
 In the future there will also hopefully be a simple query language for it, too. But that's a big _maybe_.
 
+**IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
+
 ## <ins>**Version 0.0.0**</ins>
 Version 0.0.0 (v0.0.0) was released October 5, 2020. 
 
