@@ -1,3 +1,5 @@
+# These are some thoughts of mine for the querying language
+
 ### OPEN ENTIRE DATABASE
 DaFAQ is [DATABASE NAME] 
 
