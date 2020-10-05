@@ -12,4 +12,4 @@ v0.0.0 released. In it:
 * The ability to change data in the database (using switch_field to rename and/or change the datatype of a field and add_record to add a record)
 * The ability to "poop" a table (print every record in the table) 
 
-More details in README.md (or if I forget to updat this, the archive directory in details)
+More details in README.md
