@@ -301,6 +301,7 @@ int add_record(char * name){
         }
         error_check = get_raw_input(NULL, (char **)&data);
         memcpy(string_data, data, error_check);
+        free(data);
 
         switch(fields[i].data_len){
             case INT:

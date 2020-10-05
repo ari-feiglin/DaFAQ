@@ -58,9 +58,12 @@ int create_table(char * table_name){
     while(true){
         valid = false;
 
+        if(NULL != field_name){
+            free(field_name);
+        }
         sprintf(prompt, "~`~Field number %d:~\n", num_of_fields);
         print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
-        get_raw_input(NULL, (char **)&field_name);
+        get_raw_input(NULL, &field_name);
 
         difference = strncmp(field_name, "quit", STRING_LEN);
         if(0 == difference){
@@ -69,7 +72,7 @@ int create_table(char * table_name){
             }
             break;
         }
-
+        
         fields = realloc(fields, (num_of_fields+1) * sizeof(field));
         if(NULL == fields){
             perror("Realloc error");
@@ -77,6 +80,9 @@ int create_table(char * table_name){
             goto cleanup;
         }
 
+        if(NULL != field_data_type){
+            free(field_data_type);
+        }
         sprintf(prompt, "~`~Datatype: (%s):~\n", data_type_list);
         print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
         get_raw_input(NULL, &field_data_type);
