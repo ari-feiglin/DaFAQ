@@ -1,0 +1,116 @@
+#if 0
+int switch_field(char * field_name, int data_size, char * name, int field_num){
+    /*
+    DO NOT USE UNLESS USED WHEN INITIALIZING A HEADER FILE:
+    Dangerous function at the moment, will not change data in table, and will thus result in a corrupted table.
+    Just switching a field's name is safe.
+    */
+
+    int error_check = 0;
+    int name_len = 0;
+    int fd = -1;
+    int new_fd = -1;
+    int fields_len = 0;
+    int difference = 0;
+    int num_of_fields = 0;
+    off_t offset = 0;
+    field new_field = {0};
+    char * magic_check = NULL;
+    char * del_name = NULL;
+    char * data = NULL;
+    field * fields = NULL;
+
+    magic_check = malloc(magic_len);
+
+    fd = open(name, O_RDWR);
+    if(-1 == fd){
+        perror("File open error");
+        goto cleanup;
+    }
+
+    error_check = read(fd, magic_check, magic_len);
+    if(-1 == offset){
+        perror("read error");
+        goto cleanup;
+    }
+    difference = strncmp(magic, magic_check, magic_len);
+    if(0 != difference){
+        printf("Invalid file type!\n");
+        goto cleanup;
+    }
+    
+    error_check = read(fd, &fields_len, sizeof(fields_len));
+    if(-1 == error_check){
+        perror("read error");
+        goto cleanup;
+    }
+
+    if(-1 == field_num){
+        fields_len += sizeof(field);
+        offset = lseek(fd, fields_len, SEEK_CUR);
+        if(-1 == offset){
+            perror("lseek error");
+            goto cleanup;
+        }
+    }
+    else{
+        offset = lseek(fd, field_num * sizeof(field), SEEK_CUR);
+        if(-1 == offset){
+            perror("lseek error");
+            goto cleanup;
+        }
+    }
+
+    memcpy(&(new_field.name), field_name, strnlen(field_name, NAME_LEN));
+    new_field.data_len = data_size;
+    error_check = write(fd, (char *)&new_field, sizeof(new_field));
+
+    offset = lseek(fd, magic_len, SEEK_SET);
+    if(-1 == offset){
+        perror("Lseek error");
+        error_check = -1;
+        goto cleanup;
+    }
+
+    error_check = write(fd, &fields_len, sizeof(fields_len));
+    if(-1 == error_check){
+        perror("Write error");
+        goto cleanup;
+    }
+
+    //Rewrite table file
+    fields_len = get_fields(&fields, fd, true);
+    if(-1 == fields_len){
+        goto cleanup;
+    }
+
+    //We begin rewriting the table file by moving the old one...
+    del_name = malloc(strnlen(name, STRING_LEN) + 5);
+    if(-1 == del_name){
+        perror("Malloc error");
+        error_check = -1;
+        goto cleanup;
+    }
+    sprintf(del_name, "del_%s", name);
+
+    error_check = rename(name, del_name);
+    if(-1 == error_check){
+        perror("Rename error");
+        goto cleanup;
+    }
+
+    new_fd = open(name, O_RDWR | O_CREAT, 0666);
+    if(-1 == new_fd){
+        perror("Open error");
+        error_check = -1;
+        goto cleanup;
+    }
+
+    data = malloc(fields_len);
+
+
+cleanup:
+    close(fd);
+    return error_check;
+}
+#endif
