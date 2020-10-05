@@ -37,6 +37,9 @@ int poop(char * file_name){
     }
     
     for(current_field=0; current_field<num_of_fields; current_field++){
+        if(NULL != print_text){
+            free(print_text);
+        }
         rect_text(fields[current_field].name, (char **)&print_text, NAME_LEN);
         print_color("~`~", BG_RED, FG,0,0,0, BOLD);
         printf("%s", print_text);
@@ -89,9 +92,10 @@ int poop(char * file_name){
 
 
 cleanup:
-/*
-    free(fields);
-    free(magic_check);
- */
+    if(fields)
+        free(fields);
+    if(print_text)
+        free(print_text);
+
     return num_of_records;
 }
