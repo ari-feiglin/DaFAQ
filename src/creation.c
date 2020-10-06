@@ -42,12 +42,14 @@ int create_table(char * table_name){
     int error_check = -1;
     int fd = -1;
     int num_of_records = 0;
+    int bytes_returned = 0;
     bool valid = false;
     char * field_name = NULL;
     char * field_data_type = NULL;
     char prompt[STRING_LEN] = {0};
     char * data_type_list = "char, int, string, boolean";
     char * database_header_name = NULL;
+    char * input_mask = NULL;
     field new_field = {0};
     field * fields = NULL;
 
@@ -106,6 +108,20 @@ int create_table(char * table_name){
         if(0 == difference){
             new_field.data_len = STRING_LEN;
             valid = true;
+
+            print_color("~`~Input mask (null to skip):~ ", BG_WHITE, FG,0,0,0, BOLD, RESET);
+            bytes_returned = get_raw_input(NULL, &input_mask);
+            difference = strncmp("null", input_mask, 4);
+            if(0 != difference){
+                valid = check_input_mask(input_mask);
+                if(!valid){
+                    print_color("~~INVALID INPUT MASK. NO INPUT MASK ADDED.~\n", B_RED, BOLD, RESET);
+                    valid = true;
+                }
+                else{
+                    memcpy(fields[num_of_fields].input_mask, input_mask, bytes_returned);
+                }
+            }
         }
 
         difference = strncmp(field_data_type, "boolean", STRING_LEN);
@@ -162,14 +178,16 @@ int create_table(char * table_name){
 
 cleanup:
     close(fd);
-    if(field_name)
+    if(NULL != field_name)
         free(field_name);
-    if(field_data_type)
+    if(NULL != field_data_type)
         free(field_data_type);
-    if(database_header_name)
+    if(NULL != database_header_name)
         free(database_header_name);
-    if(fields)
+    if(NULL != fields)
         free(fields);
-        
+    if(NULL != input_mask)
+        free(input_mask);
+  
     return num_of_fields;
 }

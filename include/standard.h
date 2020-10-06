@@ -10,6 +10,7 @@
 
 int get_raw_input(char * prompt, char ** input);
 int lower(char * string, int len);
+int upper(char * string, int len);
 int change_echo(bool on);
 int center_text(char * text, char ** centered_text, int len);
 int rect_text(char * text, char ** rectangled_text, int len);

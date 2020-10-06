@@ -50,6 +50,27 @@ cleanup:
     return len;
 }
 
+int upper(char * string, int len){
+    int i = 0;
+
+    if(1 != len){
+        len = strnlen(string, BUFFER_SIZE);
+        if(-1 == len){
+            perror("Strnlen function error");
+            goto cleanup;
+        }
+    }
+
+    for(i=0; i<len; i++){
+        if('a' <= string[i] && string[i] <= 'z'){
+            string[i] -= 32;
+        }
+    }
+
+cleanup:
+    return len;
+}
+
 int change_echo(bool on){
     int error_check = 0;
 

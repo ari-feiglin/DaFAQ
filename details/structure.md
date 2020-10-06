@@ -10,8 +10,9 @@ The header of a DaFAQ file consists of the following: <br />
 * **FIELD ARRAY**: An array of fields, whose elements are field structures. Field structures defined as: <br />
 ```c
 typedef struct field{
-    char field_name[256];
+    char field_name[32];
     int data_len;
+    char input_mask[32];
 } 
 ```
 ### BODY <br />

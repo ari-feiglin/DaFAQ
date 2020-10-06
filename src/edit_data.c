@@ -1,6 +1,6 @@
 #include "dafaq.h"
 
-int switch_field(char * file_name, char * field_name, int data_size, int field_num){
+int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num){
     int error_check = -1;
     int i = 0;
     int record = 0;     //For iterating over records
@@ -54,7 +54,7 @@ int switch_field(char * file_name, char * field_name, int data_size, int field_n
     }
 
     if(0 == data_size){     //An input of data_size = 0 means the user would like to retain the data size
-        data_size = fields[num_of_fields].data_len;
+        data_size = fields[field_num].data_len;
         copy = false;
     }
     if(-1 == field_num){        //An input of field_num = -1 means the user wants to add a new field
@@ -67,12 +67,23 @@ int switch_field(char * file_name, char * field_name, int data_size, int field_n
         }
     }
     else if(NULL == field_name){    //An input of field_name = NULL means the user would like to retain the field name
-        field_name = fields[num_of_fields].name;
+        field_name = fields[field_num].name;
+    }
+    if(NULL == input_mask){
+        if(-1 != field_num){
+            input_mask = fields[field_num].input_mask;
+        }
     }
 
     fields = realloc(fields, num_of_fields*sizeof(field));
     memset(fields[field_num].name, 0, NAME_LEN);
     memcpy(fields[field_num].name, field_name, strnlen(field_name, NAME_LEN));
+    if(NULL != input_mask){
+        memcpy(fields[field_num].input_mask, input_mask, strnlen(input_mask, NAME_LEN));
+    }
+    else{
+        memset(fields[field_num].input_mask, 0, NAME_LEN);
+    }
     fields[field_num].data_len = data_size;
 
 
@@ -258,6 +269,8 @@ int add_record(char * name){
     int i = 0;
     int int_data = 0;
     int difference = 0;
+    int valid_input_mask = 0;
+    bool input_mask = false;
     char byte_data = 0;
     off_t offset = 0;
     char prompt[STRING_LEN] = {0};
@@ -289,15 +302,35 @@ int add_record(char * name){
 
     print_color("\n~~~NEW RECORD:~\n", BG_B_RED, B_WHITE, BOLD, RESET);
     for(i=0; i<num_of_fields; i++){
+        input_mask = false;
         sprintf(prompt, "~~%s ", fields[i].name);
-        print_color(prompt, B_RED, BOLD);
+        print_color(prompt, B_GREEN, BOLD);
         switch(fields[i].data_len){
-            case STRING: print_color("(STRING):~ ", RESET); break;
+            case STRING: 
+                printf("(STRING)");
+                if(fields[i].input_mask[0] != 0){
+                    input_mask = true;
+                    printf(" (INPUT MASK: %s)", fields[i].input_mask);
+                }
+                print_color(":~ ", RESET);
+                break;
             case INT: print_color("(INT):~ ", RESET); break;
             case CHAR: print_color("(BYTE VALUE):~ ", RESET); break;
             default: print_color("\nINVALID DATATYPE~\n", RESET); num_of_records = -1; goto cleanup;
         }
         error_check = get_raw_input(NULL, (char **)&data);
+        if(input_mask){
+            valid_input_mask = valid_input(data, fields[i].input_mask);
+            if(-1 == valid_input_mask){
+                goto cleanup;
+            }
+            else if(0 == valid_input_mask){
+                print_color("~~INVALID INPUT!~\n", B_RED, BOLD, RESET);
+                free(data);
+                i--;
+                continue;
+            }
+        }
         memcpy(string_data, data, error_check);
         free(data);
 

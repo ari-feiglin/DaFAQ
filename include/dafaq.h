@@ -15,6 +15,7 @@ typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
 typedef struct field{
     char name[NAME_LEN];
     int data_len;
+    char input_mask[NAME_LEN];
 }field;
 
 char * magic;
@@ -32,9 +33,11 @@ int get_num_of_fields(int fd, bool preserve_offset);
 int get_fields(int fd, field ** fields, bool preserve_offset);
 int get_num_of_records(int fd, int num_of_fields, bool preserve_offset);
 bool check_extension(char * table_name);
+bool check_input_mask(char * input_mask);
+int valid_input(char * input, char * input_mask);
 
 //Edit data
-int switch_field(char * file_name, char * field_name, int data_size, int field_num);
+int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);
 int add_record(char * name);
 
 //Queries

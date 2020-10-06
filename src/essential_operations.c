@@ -204,3 +204,87 @@ cleanup:
 
     return is_valid;
 }
+
+bool check_input_mask(char * input_mask){
+    bool is_valid = true;
+    int i = 0;
+
+    for(i=0; input_mask[i] != 0; i++){
+        if( ('C' != input_mask[i]) &&
+        ('c' != input_mask[i]) &&
+        ('n' != input_mask[i]) &&
+        ('L' != input_mask[i]) &&
+        ('l' != input_mask[i]) &&
+        ('@' != input_mask[i]) ){
+            is_valid = false;
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    return is_valid;
+}
+
+int valid_input(char * input, char * input_mask){
+    int is_valid = 1;
+    int input_len = 0;
+    int input_mask_len = 0;
+    int i = 0;
+
+    input_len = strnlen(input, STRING_LEN);
+    if(-1 == input_len){
+        perror("VALID_INPUT: Strnlen error");
+        is_valid = -1;
+        goto cleanup;
+    }
+
+    input_mask_len = strnlen(input_mask, STRING_LEN);
+    if(-1 == input_len){
+        perror("VALID_INPUT: Strnlen error");
+        is_valid = -1;
+        goto cleanup;
+    }
+
+    if(input_mask_len != input_len){
+        is_valid = 0;
+        goto cleanup;
+    }
+
+    for(i=0; i<input_len; i++){
+        if('C' == input_mask[i]){
+            upper(input+i, 1);
+        }
+        else if('n' == input_mask[i]){
+            if(input[i] < '0' || input[i] > '9'){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if('l' == input_mask[i]){
+            if(input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'A') ) || input[i] > 'z'){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if('L' == input_mask[i]){
+            if(input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'A') ) || input[i] > 'z'){
+                is_valid = 0;
+                goto cleanup;
+            }
+            else{
+                upper(input+i, 1);
+            }
+        }
+        else if('@' == input_mask[i]){
+            if( ('0' <= input[i] && input[i] <= '9') ||
+            ('A' <= input[i] && input[i] <= 'Z') ||
+            ('a' <= input[i] && input[i] <= 'z') ){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+    }
+
+cleanup:
+    return is_valid;
+}
