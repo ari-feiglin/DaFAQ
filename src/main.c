@@ -13,10 +13,12 @@ int main(int argc, char ** argv){
     }
 
     create_database(database_name);
-    create_table("table1");
-    add_record("table1");
-    switch_field("table1", "NEW FIELD", STRING, 0);
+    create_table("table2.dfq");
+    add_record("table2.dfq");
+    switch_field("table2.dfq", "NEW FIELD", STRING, -1);
+    //add_record("table2.dfq");
 
-    //poop("table1");
+    poop("table2.dfq");
+    diarrhea(".");
 
 }

@@ -108,8 +108,6 @@ int switch_field(char * file_name, char * field_name, int data_size, int field_n
                 goto cleanup;
             }
         }
-
-        print_color("~~~FINISHED ADDING FIELD~\n", BG_BLACK, B_GREEN, BOLD, RESET);
     }
     else{       //Must rewrite file
         for(i=0; i<num_of_fields; i++){     //Get the length each record by finding the sum of the data_len fields in the field structures

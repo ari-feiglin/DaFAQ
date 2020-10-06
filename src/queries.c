@@ -1,4 +1,5 @@
 #include "dafaq.h"
+#include <dirent.h>
 
 int poop(char * file_name){
     field * fields = NULL;
@@ -35,11 +36,17 @@ int poop(char * file_name){
     if(-1 == num_of_records){
         goto cleanup;
     }
+
+    print_text = malloc(strnlen(file_name, STRING_LEN)+10);
+    if(NULL == print_text){
+        perror("POOP: Malloc error");
+        num_of_records = -1;
+        goto cleanup;
+    }
+    sprintf(print_text, "\n~`~%s:~\n\n", file_name);
+    print_color(print_text, BG_B_WHITE, FG,0,255,0, BOLD, RESET);
     
     for(current_field=0; current_field<num_of_fields; current_field++){
-        if(NULL != print_text){
-            free(print_text);
-        }
         rect_text(fields[current_field].name, (char **)&print_text, NAME_LEN);
         print_color("~`~", BG_RED, FG,0,0,0, BOLD);
         printf("%s", print_text);
@@ -98,4 +105,62 @@ cleanup:
         free(print_text);
 
     return num_of_records;
+}
+
+int diarrhea(char * database_name){
+    int num_of_tables = 0;
+    int error_check = 0;
+    int difference = 0;
+    bool is_valid = false;
+    DIR * directory = NULL;
+    struct dirent * entry = NULL;
+
+    directory = opendir(database_name);
+    if(NULL == directory){
+        perror("DIARRHEA: Opendir error");
+        num_of_tables = -1;
+        goto cleanup;
+    }
+    while(true){
+        errno = 0;
+        entry = readdir(directory);
+        if(NULL == entry){
+            if(0 != errno){
+                perror("DIARHEA: Readdir error");
+                num_of_tables = -1;
+                goto cleanup;
+            }
+            else{
+                break;
+            }
+        }
+
+        difference = strncmp(".", entry->d_name, STRING_LEN);   //Check if current directory
+        if(0 == difference){
+            continue;
+        }
+        difference = strncmp("..", entry->d_name, STRING_LEN);      //Check if parent directory
+        if(0 == difference){
+            continue;
+        }
+
+        is_valid = check_extension(entry->d_name);      //Check if file is valid table file (extension-wise)
+        if(!is_valid){
+            continue;
+        }
+
+        error_check = poop(entry->d_name);
+        if(-1 == error_check && 0 != errno){
+            num_of_tables = -1;
+            goto cleanup;
+        }
+
+        num_of_tables++;
+    }
+
+cleanup:
+    if(NULL != directory){
+        free(directory);
+    }
+    return num_of_tables;
 }

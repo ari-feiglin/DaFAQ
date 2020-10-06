@@ -6,7 +6,7 @@ int create_database(char * name){
     error_check = mkdir(name, 0);
     if(-1 == error_check){
         if(EEXIST == errno){
-            printf("Directory already exists. Entering...\n");
+            print_color("~`~Directory already exists. Entering...~\n", BG_BLACK, FG,0,0,255, BOLD, RESET);
             error_check = chdir(name);
             if(-1 == error_check){
                 perror("Chdir error");

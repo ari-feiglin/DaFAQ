@@ -31,6 +31,7 @@ bool check_magic(int fd, bool preserve_offset);
 int get_num_of_fields(int fd, bool preserve_offset);
 int get_fields(int fd, field ** fields, bool preserve_offset);
 int get_num_of_records(int fd, int num_of_fields, bool preserve_offset);
+bool check_extension(char * table_name);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, int field_num);
@@ -38,3 +39,4 @@ int add_record(char * name);
 
 //Queries
 int poop(char * file_name);
+int diarrhea(char * database_name);

@@ -80,7 +80,9 @@ int center_text(char * text, char ** centered_text, int len){
     int text_len = 0;
     int delay_len = 0;
 
-    free(*centered_text);
+    if(NULL != *centered_text){
+        free(*centered_text);
+    }
     *centered_text = malloc(len+1);
     if(NULL == centered_text){
         perror("Malloc error");
@@ -97,7 +99,7 @@ int center_text(char * text, char ** centered_text, int len){
 
     delay_len = (len-text_len)/2;
 
-    memcpy(*centered_text+delay_len, text, text_len);
+    memcpy(*centered_text+delay_len, text, MIN(text_len, len));
 
 cleanup:
     return return_val;
@@ -107,7 +109,9 @@ int rect_text(char * text, char ** rectangled_text, int len){
     int return_val = -1;
     int text_len = 0;
 
-    free(*rectangled_text);
+    if(NULL != *rectangled_text){
+        free(*rectangled_text);
+    }
     *rectangled_text = malloc(len+1);
     if(NULL == rectangled_text){
         perror("Malloc error");
@@ -122,7 +126,7 @@ int rect_text(char * text, char ** rectangled_text, int len){
         goto cleanup;
     }
 
-    memcpy(*rectangled_text, text, text_len);
+    memcpy(*rectangled_text, text, MIN(text_len, len));
 
 cleanup:
     return return_val;

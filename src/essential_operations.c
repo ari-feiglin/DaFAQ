@@ -169,3 +169,38 @@ int get_num_of_records(int fd, int num_of_fields, bool preserve_offset){
 cleanup:
     return num_of_records;
 }
+
+bool check_extension(char * table_name){
+    bool is_valid = false;
+    int i = 0;
+    int name_len = 0;
+    int difference = 0;
+    char * extension_check = NULL;
+
+    name_len = strnlen(table_name, STRING_LEN);
+    if(-1 == name_len){
+        perror("CHECK EXTENSION: strnlen error");
+        goto cleanup;
+    }
+
+    for(i=0; i<name_len && table_name[i] != '.'; i++);  //Get to . in table_name
+
+    extension_check = malloc(name_len - i);     //Allocate a buffer whose size is the length of the extension of the table file
+
+    memcpy(extension_check, table_name+i, name_len-i);      //Copy extension to extension_check
+
+    difference = strncmp(extension, extension_check, name_len-i);       //Check if extension is valid
+    if(0 == difference){
+        is_valid = true;
+    }
+    else{
+        goto cleanup;
+    }
+
+cleanup:
+    if(NULL != extension_check){
+        free(extension_check);
+    }
+
+    return is_valid;
+}
