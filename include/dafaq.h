@@ -35,10 +35,11 @@ int get_num_of_records(int fd, int num_of_fields, bool preserve_offset);
 bool check_extension(char * table_name);
 bool check_input_mask(char * input_mask);
 int valid_input(char * input, char * input_mask);
+int get_len_of_record(int fd, bool preserve_offset);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);
-int add_record(char * name);
+int add_record(char * name, int record_num);
 
 //Queries
 int poop(char * file_name);

@@ -170,6 +170,45 @@ cleanup:
     return num_of_records;
 }
 
+int get_len_of_record(int fd, bool preserve_offset){
+    int len_of_records = 0;
+    int num_of_fields = 0;
+    int i = 0;
+    off_t offset = 0;
+    field * fields = NULL;
+
+    offset = lseek(fd, 0, SEEK_CUR);
+    if(-1 == offset){
+        perror("GET_LEN_OF_RECORD: Lseek error");
+        len_of_records = -1;
+        goto cleanup;
+    }
+
+    num_of_fields = get_fields(fd, &fields, false);
+    if(-1 == num_of_fields){
+        len_of_records = -1;
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_fields; i++){
+        len_of_records += fields[i].data_len;
+    }
+
+    if(preserve_offset){
+        offset = lseek(SEEK_SET, offset, SEEK_SET);
+        if(-1 == offset){
+            perror("GET_LEN_OF_RECORD: Lseek error");
+            len_of_records = -1;
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    if(NULL != fields)
+        free(fields);
+
+}
+
 bool check_extension(char * table_name){
     bool is_valid = false;
     int i = 0;

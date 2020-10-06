@@ -16,7 +16,7 @@ int main(int argc, char ** argv){
     create_table("table2.dfq");
     add_record("table2.dfq");
     switch_field("table2.dfq", "NEW FIELD", STRING, "n@nn", -1);
-    add_record("table2.dfq");
+    //add_record("table2.dfq");
 
     poop("table2.dfq");
     diarrhea(".");

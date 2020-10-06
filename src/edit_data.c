@@ -260,12 +260,13 @@ cleanup:
     return error_check;
 }
 
-int add_record(char * name){
+int add_record(char * name, int record_num){
     bool is_valid = false;
     int fd = -1;
     int num_of_fields = 0;
     int num_of_records = -1;
     int error_check = 0;
+    int record_len = 0;
     int i = 0;
     int int_data = 0;
     int difference = 0;
@@ -294,6 +295,21 @@ int add_record(char * name){
         goto cleanup;
     }
 
+    record_len = get_len_of_record(fd, false);
+    if(-1 == record_len){
+        num_of_records = -1;
+        goto cleanup;
+    }
+
+    num_of_records = get_num_of_records(fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        goto cleanup;
+    }
+
+    if(record_num > num_of_records - 1){
+        record_num = num_of_records - 1;
+    }
+    
     offset = lseek(fd, 0, SEEK_END);
     if(-1 == offset){
         perror("Lseek error");
