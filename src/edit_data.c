@@ -260,7 +260,7 @@ cleanup:
     return error_check;
 }
 
-int add_record(char * name, int record_num){
+int switch_record(char * name, int record_num){
     bool is_valid = false;
     int fd = -1;
     int num_of_fields = 0;
@@ -269,6 +269,7 @@ int add_record(char * name, int record_num){
     int record_len = 0;
     int i = 0;
     int int_data = 0;
+    int record_offset = 0;
     int difference = 0;
     int valid_input_mask = 0;
     bool input_mask = false;
@@ -277,6 +278,7 @@ int add_record(char * name, int record_num){
     char prompt[STRING_LEN] = {0};
     char string_data[STRING_LEN] = {0};
     void * data = NULL;
+    void * old_data = NULL;
     field * fields = NULL;
 
     fd = open(name, O_RDWR);
@@ -307,19 +309,62 @@ int add_record(char * name, int record_num){
     }
 
     if(record_num > num_of_records - 1){
-        record_num = num_of_records - 1;
+        record_num = num_of_records;
     }
-    
-    offset = lseek(fd, 0, SEEK_END);
+    if(-1 == record_num){
+        record_num = num_of_records;
+    }
+
+    offset = lseek(fd, record_num * record_len, SEEK_CUR);
     if(-1 == offset){
         perror("Lseek error");
         goto cleanup;
     }
 
-    print_color("\n~~~NEW RECORD:~\n", BG_B_RED, B_WHITE, BOLD, RESET);
+    sprintf(prompt, "\n~~~RECORD NUM %i:~\n", record_num);
+    print_color(prompt, BG_B_RED, B_WHITE, BOLD, RESET);
     for(i=0; i<num_of_fields; i++){
         input_mask = false;
-        sprintf(prompt, "~~%s ", fields[i].name);
+        if(NULL != old_data){
+            free(old_data);
+        }
+        old_data = malloc(fields[i].data_len+1);
+        if(NULL == old_data){
+            perror("SWITCH RECORD: Malloc error");
+            num_of_records = -1;
+            goto cleanup;
+        }
+        memset(old_data, 0, fields[i].data_len+1);
+
+        if(record_num != num_of_records){
+            error_check = read(fd, old_data, fields[i].data_len);
+            if(-1 == error_check){
+                perror("SWITCH RECORD: Read error");
+                num_of_records = -1;
+                goto cleanup;
+            }
+
+            switch(fields[i].data_len){
+                case STRING:
+                    sprintf(prompt, "~~%s (Old value: %s)", fields[i].name, (char *)old_data);
+                    break;
+                case INT:
+                    memcpy(&int_data, old_data, sizeof(int_data));
+                    sprintf(prompt, "~~%s (Old value: %i)", fields[i].name, int_data);
+                    break;
+                case CHAR:
+                    memcpy(&byte_data, old_data, sizeof(byte_data));
+                    sprintf(prompt, "~~%s (Old value: %i)", fields[i].name, byte_data);
+                    break;
+                default:
+                    print_color("~~INVALID DATA TYPE~\n", B_RED, BOLD, RESET);
+                    num_of_records = -1;
+                    break;
+            }
+        }
+        else{
+            sprintf(prompt, "~~%s ", fields[i].name);
+        }
         print_color(prompt, B_GREEN, BOLD);
         switch(fields[i].data_len){
             case STRING: 
@@ -379,11 +424,19 @@ int add_record(char * name, int record_num){
                 num_of_records = -1;
                 goto cleanup;
         }
+        offset = lseek(fd, magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_num*record_len+record_offset, SEEK_SET);
+        if(-1 == offset){
+            perror("Lseek error");
+            goto cleanup;
+        }
+
         error_check = write(fd, (char *)data, fields[i].data_len);
         if(-1 == error_check){
             perror("Write error");
             goto cleanup;
         }
+
+        record_offset += fields[i].data_len;
     }
 
     num_of_records = get_num_of_records(fd, num_of_fields, false);
@@ -391,23 +444,27 @@ int add_record(char * name, int record_num){
         goto cleanup;
     }
 
-    offset = lseek(fd, -1 * sizeof(num_of_records), SEEK_CUR);
-    if(-1 == offset){
-        perror("Lseek error");
-        goto cleanup;
-    }
+    if(record_num == num_of_records){
+        offset = lseek(fd, -1 * sizeof(num_of_records), SEEK_CUR);
+        if(-1 == offset){
+            perror("Lseek error");
+            goto cleanup;
+        }
 
-    num_of_records++;
-    error_check = write(fd, &num_of_records, sizeof(num_of_records));
-    if(-1 == error_check){
-        perror("Write error");
-        num_of_records = -1;
-        goto cleanup;
+        num_of_records++;
+        error_check = write(fd, &num_of_records, sizeof(num_of_records));
+        if(-1 == error_check){
+            perror("Write error");
+            num_of_records = -1;
+            goto cleanup;
+        }
     }
 
 cleanup:
     close(fd);
-    if(fields)
+    if(NULL != fields)
         free(fields);
+    if(NULL != old_data)
+        free(old_data);
     return num_of_records;
 }

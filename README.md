@@ -24,7 +24,8 @@ A list of features added in version 0.1.0
 * **create_database** - create a new database directory (a directory for holding tables) if one doesn't exist, and enter it.
 * **create_table** - an interactive text interface for creating a table and adding fields to it. This will delete any other table that had the same name.
 * **switch_field** - edits a field in a table (changes name and/or data type). This should be a safe function, as it should update all of the records in the table too. An input of field_num = -1 adds appends a field, an input of data_size = 0 does keeps the size of the field that is being switched, an input of field_name = NULL preserves the field being switched's name.
-* **add record** - prints an interactive text interface and appends a record to the table (there is no way to switch a record, I may have forgotten about that). 
+* **switch_record** - prints an interactive text interface and writes a record to the table at the desired location. An input of record_num = -1 appends the record, 
+and any attempt to switch a record past the end of the table appends the record, too. 
 
 **Table Navigation Functions:**
 * **check_magic** - checks if a file has the proper magic sequence in order to be a valid DaFAQ file.

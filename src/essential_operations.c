@@ -166,6 +166,15 @@ int get_num_of_records(int fd, int num_of_fields, bool preserve_offset){
         goto cleanup;
     }
 
+    if(preserve_offset){
+        offset = lseek(fd, old_offset, SEEK_SET);
+        if(-1 == offset){
+            perror("GET_NUM_OF_RECORDS: Lseek error");
+            num_of_records = -1;
+            goto cleanup;
+        }
+    }
+
 cleanup:
     return num_of_records;
 }
@@ -206,7 +215,7 @@ int get_len_of_record(int fd, bool preserve_offset){
 cleanup:
     if(NULL != fields)
         free(fields);
-
+    return len_of_records;
 }
 
 bool check_extension(char * table_name){

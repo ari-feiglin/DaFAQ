@@ -39,7 +39,7 @@ int get_len_of_record(int fd, bool preserve_offset);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);
-int add_record(char * name, int record_num);
+int switch_record(char * name, int record_num);
 
 //Queries
 int poop(char * file_name);
