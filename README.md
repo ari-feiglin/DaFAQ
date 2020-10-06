@@ -17,6 +17,7 @@ A list of features added in version 0.1.0
 * Feature tweaks (not necessarily bug fixes)
 * The "diarrhea" function was added
 * Input masks were added
+* Added the ability to switch records
 
 ### <ins>**USAGE:** </ins>
 

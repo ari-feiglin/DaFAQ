@@ -109,7 +109,7 @@ int create_table(char * table_name){
             new_field.data_len = STRING_LEN;
             valid = true;
 
-            print_color("~`~Input mask (null to skip):~ ", BG_WHITE, FG,0,0,0, BOLD, RESET);
+            print_color("``~Input mask (null to skip):~ ", BG,168,202,255, FG,0,255,0, BOLD, RESET);
             bytes_returned = get_raw_input(NULL, &input_mask);
             difference = strncmp("null", input_mask, 4);
             if(0 != difference){
