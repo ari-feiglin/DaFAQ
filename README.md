@@ -1,7 +1,9 @@
 # <ins>**DaFAQ Database System**</ins>
 
 The DaFAQ (**Da**tabase **F**ind **A**nd **Q**uery) database system is a work-in-progress system for managing DaFAQ databases. <br />
-In the future there will also hopefully be a simple query language for it, too. But that's a big _maybe_.
+In the future there may also hopefully be a simple query language for it, too. But that's a big _maybe_. <br />
+While I'm making all my wishes, I'll go one step further and wish that this program will be somewhat useful. But I doubt it. <br />
+I have very limited knowledge on Databases and whatnot, so this system is probably extremely flawed (as in, not just the code, but the implementation, too).
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
