@@ -42,5 +42,5 @@ int switch_field(char * file_name, char * field_name, int data_size, char * inpu
 int switch_record(char * name, int record_num);
 
 //Queries
-int poop(char * file_name);
-int diarrhea(char * database_name);
+int poop(char * table_name, char * dump_file, bool truncate);
+int diarrhea(char * database_name, char * dump_name);

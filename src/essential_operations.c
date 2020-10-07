@@ -232,6 +232,10 @@ bool check_extension(char * table_name){
     }
 
     for(i=0; i<name_len && table_name[i] != '.'; i++);  //Get to . in table_name
+    if(i == name_len){
+        is_valid = false;
+        goto cleanup;
+    }
 
     extension_check = malloc(name_len - i);     //Allocate a buffer whose size is the length of the extension of the table file
 
@@ -260,10 +264,12 @@ bool check_input_mask(char * input_mask){
     for(i=0; input_mask[i] != 0; i++){
         if( ('C' != input_mask[i]) &&
         ('c' != input_mask[i]) &&
+        ('N' != input_mask[i]) &&
         ('n' != input_mask[i]) &&
         ('L' != input_mask[i]) &&
         ('l' != input_mask[i]) &&
-        ('@' != input_mask[i]) ){
+        ('@' != input_mask[i]) &&
+        ('*' != input_mask[i]) ){
             is_valid = false;
             goto cleanup;
         }
@@ -300,30 +306,45 @@ int valid_input(char * input, char * input_mask){
 
     for(i=0; i<input_len; i++){
         if('C' == input_mask[i]){
-            upper(input+i, 1);
+            if(' ' == input[i]){
+                is_valid = 0;
+                goto cleanup;
+            }
         }
         else if('n' == input_mask[i]){
+            if( (input[i] < '0' || input[i] > '9') && ' ' != input[i]){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if('N' == input_mask[i]){
             if(input[i] < '0' || input[i] > '9'){
                 is_valid = 0;
                 goto cleanup;
             }
         }
         else if('l' == input_mask[i]){
-            if(input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'A') ) || input[i] > 'z'){
+            if( (input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'a') ) || input[i] > 'z') && ' ' != input[i]){
                 is_valid = 0;
                 goto cleanup;
             }
         }
         else if('L' == input_mask[i]){
-            if(input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'A') ) || input[i] > 'z'){
+            if(input[i] < 'A' || ( ('Z' < input[i]) && (input[i] < 'a') ) || input[i] > 'z'){
                 is_valid = 0;
                 goto cleanup;
             }
-            else{
-                upper(input+i, 1);
-            }
         }
         else if('@' == input_mask[i]){
+            if( (('0' <= input[i] && input[i] <= '9') ||
+            ('A' <= input[i] && input[i] <= 'Z') ||
+            ('a' <= input[i] && input[i] <= 'z')) &&
+            ' ' != input[i] ){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if('*' == input_mask[i]){
             if( ('0' <= input[i] && input[i] <= '9') ||
             ('A' <= input[i] && input[i] <= 'Z') ||
             ('a' <= input[i] && input[i] <= 'z') ){

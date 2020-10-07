@@ -15,10 +15,9 @@ int main(int argc, char ** argv){
     create_database(database_name);
     create_table("table2.dfq");
     switch_record("table2.dfq", -1);
-    switch_field("table2.dfq", "NEW FIELD", STRING, "n@nn", -1);
-    switch_record("table2.dfq", 10);
+    switch_record("table2.dfq", -1);
 
-    poop("table2.dfq");
-    diarrhea(".");
+    //poop("test.dfq", "table2.md", true);
+    diarrhea(".", "table.md");
 
 }
