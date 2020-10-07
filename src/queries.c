@@ -119,6 +119,11 @@ int poop(char * table_name, char * dump_file, bool truncate){
 
         name_len++;     //Increment name_len in order to make room for a newline character
         print_text = realloc(print_text, name_len);
+        if(NULL == print_text){
+            perror("POOP: Realloc error");
+            num_of_records = -1;
+            goto cleanup;
+        }
         sprintf(print_text, "%s\n", print_text);        //Add a newline character to print_text
 
         error_check = write(dump_fd, print_text, name_len);     //Write print_text to the markdown file
@@ -133,7 +138,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
             free(print_text);
         }
         name_len = 4 * sizeof(char) * num_of_fields+1;
-        print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|), and then a newline
+        print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|) and newline
         memset(print_text, 0, name_len);
         
         for(current_field=0; current_field<num_of_fields; current_field++){
@@ -200,10 +205,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
             }
             else{       //If dumping table
                 name_len += strnlen(string_data, fields[current_field].data_len)+1;    //Name len is length of string_data and 1
-                if(STRING == name_len){     //If data is full
-                    name_len = 0;
-                }
-
+                printf("STRING DATA: %s\n", string_data);
                 print_text = realloc(print_text, name_len); 
                 if(NULL == print_text){
                     perror("POOP: Realloc error");
@@ -217,20 +219,24 @@ int poop(char * table_name, char * dump_file, bool truncate){
                 
             }
         }
+
+        if(print_table){
+            print_text = realloc(print_text, name_len+1);
+            if(NULL == print_text){
+                perror("POOP: Realloc error");
+                num_of_records = -1;
+                goto cleanup;
+            }
+            print_text[name_len] = '\n';
+
+            error_check = write(dump_fd, print_text, name_len+1);    //Write print_text to dump file
+            if(-1 == error_check){
+                perror("POOP: Write error");
+                num_of_records = -1;
+                goto cleanup;
+            }
+        }
         
-        print_text = realloc(print_text, name_len+1);
-        if(NULL == print_text){
-            perror("POOP: Realloc error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-        print_text[name_len] = '\n';
-        error_check = write(dump_fd, print_text, name_len+1);    //Write print_text to dump file
-        if(-1 == error_check){
-            perror("POOP: Write error");
-            num_of_records = -1;
-            goto cleanup;
-        }
     }
     if(print_table){
         error_check = write(dump_fd, "<br />\n\n", strlen("<br />\n\n"));

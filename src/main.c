@@ -18,6 +18,6 @@ int main(int argc, char ** argv){
     switch_record("table2.dfq", -1);
 
     //poop("test.dfq", "table2.md", true);
-    diarrhea(".", "table.md");
+    diarrhea(".", "tables.md");
 
 }

@@ -34,7 +34,7 @@ and any attempt to switch a record past the end of the table appends the record,
 * **check_extension** - checks if table file has a valid extension (.dfq)
 
 **Database Review Functions:**
-* **poop** - prints every record in a table. If one is specified, print the output to a markdown file.
+* **poop** - prints every record in a table. If one is specified, print the output to a markdown file. (In order to not dump a table, dump_file should be NULL)
 * **diahrrea** - poops every table in a database.
 
 **Other Functions:**
