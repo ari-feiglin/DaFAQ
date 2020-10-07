@@ -94,10 +94,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
             goto cleanup;
         }
 
-        name_len = 0;/*
-        if(NULL != print_text){     //Free print_text as to not cause a memory leak
-            free(print_text);
-        }*/
+        name_len = 0;
 
         //Print Field Names
         for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the fields
@@ -136,6 +133,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
         //Print Field Name delimiter (eg. :-:|:-:|:-:|)
         if(NULL != print_text){     //Reinitialize name_len and print_text
             free(print_text);
+            print_text = NULL;
         }
         name_len = 4 * sizeof(char) * num_of_fields+1;
         print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|) and newline
@@ -205,7 +203,6 @@ int poop(char * table_name, char * dump_file, bool truncate){
             }
             else{       //If dumping table
                 name_len += strnlen(string_data, fields[current_field].data_len)+1;    //Name len is length of string_data and 1
-                printf("STRING DATA: %s\n", string_data);
                 print_text = realloc(print_text, name_len); 
                 if(NULL == print_text){
                     perror("POOP: Realloc error");

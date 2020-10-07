@@ -62,6 +62,7 @@ int create_table(char * table_name){
 
         if(NULL != field_name){
             free(field_name);
+            field_name = NULL;
         }
         sprintf(prompt, "~`~Field number %d:~\n", num_of_fields);
         print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
@@ -84,6 +85,7 @@ int create_table(char * table_name){
 
         if(NULL != field_data_type){
             free(field_data_type);
+            field_data_type = NULL;
         }
         sprintf(prompt, "~`~Datatype: (%s):~\n", data_type_list);
         print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);

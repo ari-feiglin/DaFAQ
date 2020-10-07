@@ -18,5 +18,7 @@ When a field is of data type STRING, the program will ask for an input mask. <br
 * @ - any symbol (save a space)
 * S - must be a space
 * '/', '.', ',' - must be one of these characters
+* e - end of input mask (any input past this will be considered valid input). Not including an e limits the size of input to the size given by the input mask.
+    If the e isn't at the end of the input mask, all subsequent characters will be ignored.
 
 Looking at our example input mask "LLLSNN,SNNNN", we can see that we must input three letters, then a space, then two numbers, a comma, a space, and then four numbers. <br />

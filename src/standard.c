@@ -15,6 +15,11 @@ int get_raw_input(char * prompt, char ** input){
     if(NULL != prompt){
         printf("%s", prompt);
     }
+    if(NULL != *input){
+        printf("\n\nINPUT PTR: %p\n", *input);
+        free(*input);
+        *input = NULL;
+    }
 
     bytes_read = getline(input, &size, stdin);
     if(-1 == bytes_read){
@@ -103,6 +108,7 @@ int center_text(char * text, char ** centered_text, int len){
 
     if(NULL != *centered_text){
         free(*centered_text);
+        *centered_text = NULL;
     }
     *centered_text = malloc(len+1);
     if(NULL == centered_text){
@@ -132,6 +138,7 @@ int rect_text(char * text, char ** rectangled_text, int len){
 
     if(NULL != *rectangled_text){
         free(*rectangled_text);
+        *rectangled_text = NULL;
     }
     *rectangled_text = malloc(len+1);
     if(NULL == rectangled_text){

@@ -327,6 +327,7 @@ int switch_record(char * name, int record_num){
         input_mask = false;
         if(NULL != old_data){
             free(old_data);
+            old_data = NULL;
         }
         old_data = malloc(fields[i].data_len+1);
         if(NULL == old_data){
@@ -379,6 +380,7 @@ int switch_record(char * name, int record_num){
             case CHAR: print_color("(BYTE VALUE):~ ", RESET); break;
             default: print_color("\nINVALID DATATYPE~\n", RESET); num_of_records = -1; goto cleanup;
         }
+        printf("\n\nDEBUG\n\n");
         error_check = get_raw_input(NULL, (char **)&data);
         if(input_mask){
             valid_input_mask = valid_input(data, fields[i].input_mask);
@@ -388,12 +390,14 @@ int switch_record(char * name, int record_num){
             else if(0 == valid_input_mask){
                 print_color("~~INVALID INPUT!~\n", B_RED, BOLD, RESET);
                 free(data);
+                data = NULL;
                 i--;
                 continue;
             }
         }
         memcpy(string_data, data, error_check);
         free(data);
+        data = NULL;
 
         switch(fields[i].data_len){
             case INT:

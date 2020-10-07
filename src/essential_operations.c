@@ -50,7 +50,7 @@ bool check_magic(int fd, bool preserve_offset){
     }
 
 cleanup:
-    if(magic_check)
+    if(NULL != magic_check)
         free(magic_check);
     return is_valid;
 }
@@ -269,7 +269,12 @@ bool check_input_mask(char * input_mask){
         ('L' != input_mask[i]) &&
         ('l' != input_mask[i]) &&
         ('@' != input_mask[i]) &&
-        ('*' != input_mask[i]) ){
+        ('*' != input_mask[i]) &&
+        ('S' != input_mask[i]) &&
+        (',' != input_mask[i]) &&
+        ('.' != input_mask[i]) &&
+        ('/' != input_mask[i]) &&
+        ('e' != input_mask[i])){
             is_valid = false;
             goto cleanup;
         }
@@ -296,11 +301,6 @@ int valid_input(char * input, char * input_mask){
     if(-1 == input_len){
         perror("VALID_INPUT: Strnlen error");
         is_valid = -1;
-        goto cleanup;
-    }
-
-    if(input_mask_len != input_len){
-        is_valid = 0;
         goto cleanup;
     }
 
@@ -351,6 +351,26 @@ int valid_input(char * input, char * input_mask){
                 is_valid = 0;
                 goto cleanup;
             }
+        }
+        else if('S' == input_mask[i]){
+            if(' ' != input[i]){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if(',' == input_mask[i] || '.' == input_mask[i] || '/' == input_mask[i]){
+            if(input_mask[i] != input[i]){
+                is_valid = 0;
+                goto cleanup;
+            }
+        }
+        else if('e' == input_mask[i]){
+            is_valid = 1;
+            goto cleanup;
+        }
+        else{
+            is_valid = 0;
+            goto cleanup;
         }
     }
 
