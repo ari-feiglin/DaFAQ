@@ -16,7 +16,6 @@ int get_raw_input(char * prompt, char ** input){
         printf("%s", prompt);
     }
     if(NULL != *input){
-        printf("\n\nINPUT PTR: %p\n", *input);
         free(*input);
         *input = NULL;
     }

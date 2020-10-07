@@ -58,6 +58,13 @@ As you can see, this project is split into a couple of directories:
 ### <ins>**THE FUTURE/GOALS:** </ins>
 Here are some of my ideas for the future:
 * A querying language
+* Fully comment the project
+
+### <ins>**KNOWN ISSUES**</ins>
+Even after hours of bug testing, there are still a few bugs. I haven't found any system-breaking ones that I couldn't fix, so that's good. Here's a list of issues that I haven't been able to fix:
+* Valgrind *hates* sprintf. Just kidding, I must not be doing something right. I get a lot of "invalid write of size 1" from sprintfs called by poop. I also get a "Conditional jump or move depends on uninitialised value(s)" from sprintf, too.
+
+None of these issues should ruin the program. I think, for the most part, the system is safe. Still wouldn't use it for an actual project, though.
 
 ### <ins>**NOTES:**</ins>
 None of what is in this current version (v0.1.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
