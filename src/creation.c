@@ -1,20 +1,29 @@
 #include "dafaq.h"
 
-int create_database(char * name){
+/**
+ * @brief: Creates a database
+ * @param[IN] name: Name of the database directory to create
+ * 
+ * @return: ERROR_CODE_SUCCESS on succes, else an indicative error of error_code_t 
+ * @notes: Creates a directory whose name is input in the variable name and changes the working directory to it.
+ *         This is an important function for all successive function calls. (Save diahrrea.)
+ */
+error_code_t create_database(IN char * name){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int error_check = 0;
 
-    error_check = mkdir(name, 0);
+    error_check = mkdir(name, 0);       //Make new Database directory
     if(-1 == error_check){
-        if(EEXIST == errno){
+        if(EEXIST == errno){        //If directory already exists, don't fail
             print_color("~`~Directory already exists. Entering...~\n", BG_BLACK, FG,0,0,255, BOLD, RESET);
-            error_check = chdir(name);
+            error_check = chdir(name);      //Go into already existing directory
             if(-1 == error_check){
                 perror("Chdir error");
                 goto cleanup;
             }
             goto cleanup;
         }
-        else{
+        else{       //Other error, 
             perror("Database directory creation error");
             goto cleanup;
         }
@@ -23,174 +32,75 @@ int create_database(char * name){
     error_check = chmod(name, 0775);
     if(-1 == error_check){
         perror("Database directory creation error");
+        return_value = ERROR_CODE_COULDNT_CHMOD;
         goto cleanup;
     }
 
     error_check = chdir(name);
     if(-1 == error_check){
         perror("Chdir error");
+        return_value = ERROR_CODE_COULDNT_CHANGE_DIR;
         goto cleanup;
     }
 
+    return_value = ERROR_CODE_SUCCESS;
 cleanup:
-    return error_check;
+    return return_value;
 }
 
-int create_table(char * table_name){
-    int num_of_fields = 0;
-    int difference = 0;
-    int error_check = -1;
+/** 
+ * @bried: Creates a table inside of the working directory
+ * @param[IN] table_nam: Name of the table file to create
+ * @param[IN] num_of_fields: The number of fields to add to the table file.
+ * @param[IN] fields: An array of fields to write to the table file
+ * 
+ * @return: ERROR_CODE_SUCCESS on success, else an indicative error code of error_code_t
+ * @notes: This function will remove any other file with the same name as table_name in the working directory. 
+ */
+error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field * fields){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int fd = -1;
-    int i =0;
+    int error_check = 0;
     int num_of_records = 0;
-    int bytes_returned = 0;
-    bool valid = false;
-    char * field_name = NULL;
-    char * field_data_type = NULL;
-    char prompt[STRING_LEN] = {0};
-    char * data_type_list = "char, int, string, boolean";
-    char * database_header_name = NULL;
-    char * input_mask = NULL;
-    field new_field = {0};
-    field * fields = NULL;
-
-
-    sprintf(prompt, "\n~`~CREATING TABLE %s~\n\n", table_name);
-    print_color(prompt, BG_WHITE, FG,0,0,150, BOLD, RESET);
-
-    while(true){
-        valid = false;
-
-        if(NULL != field_name){
-            free(field_name);
-            field_name = NULL;
-        }
-        sprintf(prompt, "~`~Field number %d:~\n", num_of_fields);
-        print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
-        get_raw_input(NULL, &field_name);
-
-        difference = strncmp(field_name, "quit", STRING_LEN);
-        if(0 == difference){
-            if(num_of_fields > 0){
-                valid = true;
-            }
-            break;
-        }
-        
-        fields = realloc(fields, (num_of_fields+1) * sizeof(field));
-        if(NULL == fields){
-            perror("Realloc error");
-            num_of_fields = -1;
-            goto cleanup;
-        }
-
-        if(NULL != field_data_type){
-            free(field_data_type);
-            field_data_type = NULL;
-        }
-        sprintf(prompt, "~`~Datatype: (%s):~\n", data_type_list);
-        print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
-        get_raw_input(NULL, &field_data_type);
-        lower(field_data_type, 0);
-
-        strncpy(new_field.name, field_name, strnlen(field_name, NAME_LEN));
-
-        difference = strncmp(field_data_type, "char", STRING_LEN);
-        if(0 == difference){
-            new_field.data_len = CHAR;
-            valid = true;
-        }
-
-        difference = strncmp(field_data_type, "int", STRING_LEN);
-        if(0 == difference){
-            new_field.data_len = INT;
-            valid = true;
-        }
-
-        difference = strncmp(field_data_type, "string", STRING_LEN);
-        if(0 == difference){
-            new_field.data_len = STRING_LEN;
-            valid = true;
-
-            print_color("``~Input mask (null to skip):~ ", BG,168,202,255, FG,0,255,0, BOLD, RESET);
-            bytes_returned = get_raw_input(NULL, &input_mask);
-            difference = strncmp("null", input_mask, 4);
-            if(0 != difference){
-                valid = check_input_mask(input_mask);
-                if(!valid){
-                    print_color("~~INVALID INPUT MASK. NO INPUT MASK ADDED.~\n", B_RED, BOLD, RESET);
-                    valid = true;
-                }
-                else{
-                    memcpy(fields[num_of_fields].input_mask, input_mask, bytes_returned);
-                }
-            }
-        }
-
-        difference = strncmp(field_data_type, "boolean", STRING_LEN);
-        if(0 == difference){
-            new_field.data_len = BOOLEAN;
-            valid = true;
-        }
-
-        if(valid){
-            fields[num_of_fields].data_len = new_field.data_len;
-            memcpy(fields[num_of_fields].name, new_field.name, NAME_LEN);
-            num_of_fields++;
-        }
-        else{
-            print_color("~`~INVALID REQUEST~\n", BG_B_WHITE, FG,255,0,0, BOLD, RESET);
-        }
-    }
 
     remove(table_name);
 
     fd = open(table_name, O_WRONLY | O_CREAT, 0666);
     if(-1 == fd){
         perror("Open error");
-        num_of_fields = -1;
+        return_value = ERROR_CODE_COULDNT_OPEN;
         goto cleanup;
     }
 
     error_check = write(fd, magic, strnlen(magic, STRING_LEN));
     if(-1 == error_check){
         perror("Write error");
-        num_of_fields = -1;
+        return_value = ERROR_CODE_COULDNT_WRITE;
         goto cleanup;
     }
     
     error_check = write(fd, &num_of_fields, sizeof(num_of_fields));
     if(-1 == error_check){
         perror("Write error");
-        num_of_fields = -1;
+        return_value = ERROR_CODE_COULDNT_WRITE;
         goto cleanup;
     }
 
     error_check = write(fd, fields, num_of_fields * sizeof(field));
     if(-1 == error_check){
         perror("Write error");
-        num_of_fields = -1;
+        return_value = ERROR_CODE_COULDNT_WRITE;
         goto cleanup;
     }
 
     error_check = write(fd, &num_of_records, sizeof(num_of_records));
     if(-1 == error_check){
         perror("Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
         goto cleanup;
     }
 
+    return_value = ERROR_CODE_SUCCESS;
 cleanup:
-    close(fd);
-    if(NULL != field_name)
-        free(field_name);
-    if(NULL != field_data_type)
-        free(field_data_type);
-    if(NULL != database_header_name)
-        free(database_header_name);
-    if(NULL != fields)
-        free(fields);
-    if(NULL != input_mask)
-        free(input_mask);
-  
-    return num_of_fields;
+    return return_value;
 }

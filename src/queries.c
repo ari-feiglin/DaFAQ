@@ -1,7 +1,16 @@
 #include "dafaq.h"
 #include <dirent.h>
 
-int poop(char * table_name, char * dump_file, bool truncate){
+/**
+ * @brief: Prints/writes a table file in table form
+ * @param[IN] table_name: The name of the table file
+ * @param[IN] dump_file: The name of the markdown file to dump the output table into
+ * @param[IN] truncate: If a dump file was specified, if it should truncate it
+ * 
+ * @return: On success number of records in the table file, -1 on error
+ * @notes: An input of dump_file = NULL will print the table to stdout and truncate will be ignored.
+ */
+int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     field * fields = NULL;
     int error_check = 0;
     int num_of_fields = 0;
@@ -255,7 +264,16 @@ cleanup:
     return num_of_records;
 }
 
-int diarrhea(char * database_name, char * dump_name){
+/**
+ * @brief: Print/writes every table in a database directory
+ * @param[IN] database_name: The name of the database directory
+ * @param[IN] dump_name: The name of the markdown file to dump the tables into
+ * 
+ * @return: On success the number of tables printed/written, else -1
+ * @notes: This function iterates over the contents of the directory, checks if they are a valid, and
+ *         if they are, it poops them.
+ */
+int diarrhea(IN char * database_name, IN char * dump_name){
     int num_of_tables = 0;
     int error_check = 0;
     int difference = 0;

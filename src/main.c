@@ -13,9 +13,9 @@ int main(int argc, char ** argv){
     }
 
     create_database(database_name);
-    create_table("table2.dfq");
-    edit_record_interfaces("table2.dfq", -1);
-    edit_record_interfaces("table2.dfq", -1);
+    create_table_interface("Table.dfq");
+    edit_record_interfaces("Table.dfq", -1);
+    edit_record_interfaces("Table.dfq", -1);
 
     //poop("test.dfq", "table2.md", true);
     diarrhea(".", NULL);

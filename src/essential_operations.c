@@ -1,6 +1,14 @@
 #include "dafaq.h"
 
-bool check_magic(int fd, bool preserve_offset){
+/**
+ * @brief: Checks if a file has the valid magic sequence to denote it as a valid DaFAQ table file
+ * @param[IN] fd: The file descriptor of the table file.
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: If valid true, else false (no error returning)
+ */
+bool check_magic(IN int fd, IN bool preserve_offset){
     bool is_valid = false;
     int error_check = 0;
     int difference = 0;
@@ -55,7 +63,15 @@ cleanup:
     return is_valid;
 }
 
-int get_num_of_fields(int fd, bool preserve_offset){
+/**
+ * @brief: Returns the number of fields in a table file
+ * @param[IN] fd: The file descriptor of the table file.
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: The number of fields in a table file
+ */
+int get_num_of_fields(IN int fd, IN bool preserve_offset){
     bool is_valid = false;
     int num_of_fields = -1;
     int error_check = 0;
@@ -92,7 +108,16 @@ cleanup:
     return num_of_fields;
 }
 
-int get_fields(int fd, field ** fields, bool preserve_offset){
+/**
+ * @brief: Fills out an array with the fields in a table file
+ * @param[IN] fd: The file descriptor of the table file.
+ * @param[OUT] fields: A NULL pointer to an array of field structures.
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: On success the number of fields in a file, else -1
+ */
+int get_fields(IN int fd, OUT field ** fields, IN bool preserve_offset){
     int num_of_fields = -1;
     int error_check = 0;
     off_t old_offset = 0;
@@ -135,7 +160,18 @@ cleanup:
     return num_of_fields;
 }
 
-int get_num_of_records(int fd, int num_of_fields, bool preserve_offset){
+/**
+ * @brief: Returns the number of records in a table file
+ * @param[IN] fd: The file descriptor of the table file.
+ * @param[IN] num_of_fields: The number of fields in the table file
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: On success the number of records in the table file, else -1
+ * @notes: It is assumed that the user already called get_fields, so get_num_of_records doesn't get the
+ *         number of fields itself.
+ */
+int get_num_of_records(IN int fd, IN int num_of_fields, IN bool preserve_offset){
     int num_of_records = -1;
     int error_check = 0;
     bool is_valid = 0;
@@ -179,7 +215,17 @@ cleanup:
     return num_of_records;
 }
 
-int get_len_of_record(int fd, bool preserve_offset){
+/**
+ * @brief: Returns the length of a record in a table file
+ * @param[IN] fd: The file descriptor of the table file.
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: On success the length of a reocord, else -1
+ * @notes: For some reason, get_len_of_records utilizes get_fields instead of having an array of fields
+ *         as input. I can't remember why. I'll look into this later maybe.
+ */
+int get_len_of_record(IN int fd, IN bool preserve_offset){
     int len_of_records = 0;
     int num_of_fields = 0;
     int i = 0;
@@ -218,7 +264,13 @@ cleanup:
     return len_of_records;
 }
 
-bool check_extension(char * table_name){
+/**
+ * @brief: Checks if an input file has a valid .dfq extension
+ * @param[IN] table_name: The name of the table file
+ * 
+ * @return: If valid true, else false (it is not expected that this will fail, unless you really try)
+ */
+bool check_extension(IN char * table_name){
     bool is_valid = false;
     int i = 0;
     int name_len = 0;
@@ -257,7 +309,13 @@ cleanup:
     return is_valid;
 }
 
-bool check_input_mask(char * input_mask){
+/**
+ * @brief: Returns if an if an input input mask is a valid one or not
+ * @param[IN] input_mask: The input mask to validate
+ * 
+ * @return: If valid true, else false (This function can only fail with a SEGFAULT)
+ */
+bool check_input_mask(IN char * input_mask){
     bool is_valid = true;
     int i = 0;
 
@@ -284,7 +342,14 @@ cleanup:
     return is_valid;
 }
 
-int valid_input(char * input, char * input_mask){
+/**
+ * @brief: Returns if input is valid according to an input mask
+ * @param[IN] input: The input to validate against:
+ * @param[IN] input_mask: The input mask
+ * 
+ * @return: If valid 1, if invalid 0, on error -1
+ */
+int valid_input(IN char * input, IN char * input_mask){
     int is_valid = 1;
     int input_len = 0;
     int input_mask_len = 0;

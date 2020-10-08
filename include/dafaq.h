@@ -7,10 +7,32 @@
 #include <unistd.h>
 #include <errno.h>
 
+#define IN
+#define OUT
+
 #define STRING_LEN (256)
 #define NAME_LEN (32)
 #define MAX_CALLS (16)
 #define NUM_OF_QUERYERS (5)
+
+typedef enum error_code_e{
+    ERROR_CODE_UNINTIALIZED = -1,
+    ERROR_CODE_SUCCESS = 0,
+
+    ERROR_CODE_COULDNT_CHANGE_DIR,
+    ERROR_CODE_COULDNT_CHMOD,
+    ERROR_CODE_COULDNT_MKDIR,
+    ERROR_CODE_COULDNT_OPEN,
+    ERROR_CODE_COULDNT_RENAME,
+    ERROR_CODE_COULDNT_WRITE,
+    ERROR_CODE_COULDNT_READ,
+    ERROR_CODE_COULDNT_LSEEK,
+    ERROR_CODE_COULDNT_GET_FIELDS,
+    ERROR_CODE_COULDNT_NUM_OF_RECORDS,
+    ERROR_CODE_COULDNT_ALLOCATE_MEMORY,
+    ERROR_CODE_INVALID_INPUT,
+    ERROR_CODE_INVALID_DATATYPE
+} error_code_t;
 
 typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
 typedef enum token {FIELD_TABLE, DaFAQ, DIGEST, CONSTIPATE, POOP, DIARRHEA, FROM, GET, MERGE, AT, WHERE, AVERAGE, SUM, AMOUNT}tokens, calls, queryers, functions;
@@ -37,7 +59,7 @@ int extension_len;
 
 //Creation
 int create_database(char * name);
-int create_table(char * table_name);
+int create_table(char * table_name, int num_of_fields, field * fields);
 
 //Essential operations
 bool check_magic(int fd, bool preserve_offset);
@@ -58,4 +80,5 @@ int poop(char * table_name, char * dump_file, bool truncate);
 int diarrhea(char * database_name, char * dump_name);
 
 //Interfaces
+int create_table_interface(char * table_name);
 int edit_record_interfaces(char * name, int record_num);
