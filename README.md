@@ -11,11 +11,12 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 <ins>**v0.1.0 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
 Version 0.2.0 (v0.2.0) was released October #, 2020
 
-### <ins>**v0.1.0 CHANGES:**</ins>
+### <ins>**v0.2.0 CHANGES:**</ins>
 A list of features added in version 0.1.0
-* Even more bugfixes...
+* Even more bugfixes... (Like, a lot)
 * Changed the usage of an input mask. As this only affects the input of records, and not their storage, tables made in v0.1 are still compatible.
 * Added the ability to poop tables into a markdown (.md) file
+* Added a layer of abstraction to the creation of tables in the form of function interfaces.
 
 ### <ins>**USAGE:** </ins>
 
@@ -59,12 +60,6 @@ As you can see, this project is split into a couple of directories:
 Here are some of my ideas for the future:
 * A querying language
 * Fully comment the project
-
-### <ins>**KNOWN ISSUES**</ins>
-Even after hours of bug testing, there are still a few bugs. I haven't found any system-breaking ones that I couldn't fix, so that's good. Here's a list of issues that I haven't been able to fix:
-* Valgrind *hates* sprintf. Just kidding, I must not be doing something right. I get a lot of "invalid write of size 1" from sprintfs called by poop. I also get a "Conditional jump or move depends on uninitialised value(s)" from sprintf, too.
-
-None of these issues should ruin the program. I think, for the most part, the system is safe. Still wouldn't use it for an actual project, though.
 
 ### <ins>**NOTES:**</ins>
 None of what is in this current version (v0.1.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?

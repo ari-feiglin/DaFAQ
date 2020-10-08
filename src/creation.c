@@ -41,6 +41,7 @@ int create_table(char * table_name){
     int difference = 0;
     int error_check = -1;
     int fd = -1;
+    int i =0;
     int num_of_records = 0;
     int bytes_returned = 0;
     bool valid = false;
@@ -92,7 +93,7 @@ int create_table(char * table_name){
         get_raw_input(NULL, &field_data_type);
         lower(field_data_type, 0);
 
-        strncpy(new_field.name, field_name, STRING_LEN);
+        strncpy(new_field.name, field_name, strnlen(field_name, NAME_LEN));
 
         difference = strncmp(field_data_type, "char", STRING_LEN);
         if(0 == difference){
@@ -134,7 +135,7 @@ int create_table(char * table_name){
 
         if(valid){
             fields[num_of_fields].data_len = new_field.data_len;
-            memcpy(&(fields[num_of_fields].name), &(new_field.name), strnlen(new_field.name, NAME_LEN));
+            memcpy(fields[num_of_fields].name, new_field.name, NAME_LEN);
             num_of_fields++;
         }
         else{

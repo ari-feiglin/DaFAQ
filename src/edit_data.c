@@ -13,8 +13,6 @@ int switch_field(char * file_name, char * field_name, int data_size, char * inpu
     int record_data_length = 0;
     int original_num_of_fields = 0;
     int record_offset = 0;
-    int int_data = 0;
-    char byte_data = 0;
     bool copy = true;
     bool is_new_field = false;
     off_t offset = 0;
@@ -260,32 +258,17 @@ cleanup:
     return error_check;
 }
 
-int switch_record(char * name, int record_num){
+int switch_record(int fd, int record_num, int * input_lens, char ** field_input){
     bool is_valid = false;
-    int fd = -1;
     int num_of_fields = 0;
     int num_of_records = -1;
     int error_check = 0;
     int record_len = 0;
     int i = 0;
-    int int_data = 0;
     int record_offset = 0;
-    int difference = 0;
-    int valid_input_mask = 0;
-    bool input_mask = false;
-    char byte_data = 0;
     off_t offset = 0;
-    char prompt[STRING_LEN] = {0};
-    char string_data[STRING_LEN] = {0};
     void * data = NULL;
-    void * old_data = NULL;
     field * fields = NULL;
-
-    fd = open(name, O_RDWR);
-    if(-1 == fd){
-        perror("Open error");
-        goto cleanup;
-    }
 
     is_valid = check_magic(fd, false);
     if(!is_valid){
@@ -321,113 +304,21 @@ int switch_record(char * name, int record_num){
         goto cleanup;
     }
 
-    sprintf(prompt, "\n~~~RECORD NUM %i:~\n", record_num);
-    print_color(prompt, BG_B_RED, B_WHITE, BOLD, RESET);
     for(i=0; i<num_of_fields; i++){
-        input_mask = false;
-        if(NULL != old_data){
-            free(old_data);
-            old_data = NULL;
-        }
-        old_data = malloc(fields[i].data_len+1);
-        if(NULL == old_data){
-            perror("SWITCH RECORD: Malloc error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-        memset(old_data, 0, fields[i].data_len+1);
-
-        if(record_num != num_of_records){
-            error_check = read(fd, old_data, fields[i].data_len);
-            if(-1 == error_check){
-                perror("SWITCH RECORD: Read error");
-                num_of_records = -1;
-                goto cleanup;
-            }
-
-            switch(fields[i].data_len){
-                case STRING:
-                    sprintf(prompt, "~~%s (Old value: %s)", fields[i].name, (char *)old_data);
-                    break;
-                case INT:
-                    memcpy(&int_data, old_data, sizeof(int_data));
-                    sprintf(prompt, "~~%s (Old value: %i)", fields[i].name, int_data);
-                    break;
-                case CHAR:
-                    memcpy(&byte_data, old_data, sizeof(byte_data));
-                    sprintf(prompt, "~~%s (Old value: %i)", fields[i].name, byte_data);
-                    break;
-                default:
-                    print_color("~~INVALID DATA TYPE~\n", B_RED, BOLD, RESET);
-                    num_of_records = -1;
-                    break;
-            }
-        }
-        else{
-            sprintf(prompt, "~~%s ", fields[i].name);
-        }
-        print_color(prompt, B_GREEN, BOLD);
-        switch(fields[i].data_len){
-            case STRING: 
-                printf("(STRING)");
-                if(fields[i].input_mask[0] != 0){
-                    input_mask = true;
-                    printf(" (INPUT MASK: %s)", fields[i].input_mask);
-                }
-                print_color(":~ ", RESET);
-                break;
-            case INT: print_color("(INT):~ ", RESET); break;
-            case CHAR: print_color("(BYTE VALUE):~ ", RESET); break;
-            default: print_color("\nINVALID DATATYPE~\n", RESET); num_of_records = -1; goto cleanup;
-        }
-
-        error_check = get_raw_input(NULL, (char **)&data);
-        if(input_mask){
-            valid_input_mask = valid_input(data, fields[i].input_mask);
-            if(-1 == valid_input_mask){
-                goto cleanup;
-            }
-            else if(0 == valid_input_mask){
-                print_color("~~INVALID INPUT!~\n", B_RED, BOLD, RESET);
-                i--;
-                continue;
-            }
-        }
-        memcpy(string_data, data, error_check);
         if(NULL != data){
             free(data);
             data = NULL;
         }
 
-        switch(fields[i].data_len){
-            case INT:
-                int_data = (int)strtol(string_data, NULL, 10);
-                data = (void *)&int_data;
-                break;
-            case STRING:
-                data = (void *)string_data;
-                break;
-            case CHAR:
-                difference = strncmp(string_data, "true", 4);
-                if(0 == difference){
-                    byte_data = 0;
-                    data = (void *)&byte_data;
-                    break;
-                }
-                difference = strncmp(string_data, "false", 5);
-                if(0 == difference){
-                    byte_data = 1;
-                    data = (void *)&byte_data;
-                    break;
-                }
-                byte_data = (char)strtol(string_data, NULL, 10);
-                data = (void *)&byte_data;
-                break;
-            default:
-                printf("SWITCH ERROR\n");
-                num_of_records = -1;
-                goto cleanup;
+        data = malloc(fields[i].data_len);
+        if(NULL == data){
+            perror("SWITCH_RECORD: Malloc error");
+            num_of_records = -1;
+            goto cleanup;
         }
+        memset(data, 0, fields[i].data_len);
+        
+        memcpy(data, field_input[i], input_lens[i]);
 
         offset = lseek(fd, magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_num*record_len+record_offset, SEEK_SET);
         if(-1 == offset){
@@ -442,7 +333,6 @@ int switch_record(char * name, int record_num){
         }
 
         record_offset += fields[i].data_len;
-        data = NULL;
     }
 
     num_of_records = get_num_of_records(fd, num_of_fields, false);
@@ -470,7 +360,8 @@ cleanup:
     close(fd);
     if(NULL != fields)
         free(fields);
-    if(NULL != old_data)
-        free(old_data);
+    if(NULL != data)
+        free(data);
+
     return num_of_records;
 }

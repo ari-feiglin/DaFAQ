@@ -40,7 +40,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
         goto cleanup;
     }
 
-    print_text = malloc(strnlen(table_name, STRING_LEN)+10);        //Allocate memory for print_text
+    print_text = malloc(strnlen(table_name, STRING_LEN)+12);        //Allocate memory for print_text
     if(NULL == print_text){
         perror("POOP: Malloc error");
         num_of_records = -1;
@@ -85,7 +85,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
     }
     else{
         sprintf(print_text, "### **%s:**\n", table_name);       //Make a bold header (3) with the table name
-        name_len = strnlen(print_text, NAME_LEN+10);
+        name_len = strnlen(print_text, NAME_LEN+12);
 
         error_check = write(dump_fd, print_text, name_len);     //Write it to the markdown file
         if(-1 == error_check){
@@ -94,7 +94,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
             goto cleanup;
         }
 
-        name_len = 0;
+        name_len = 1;
 
         //Print Field Names
         for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the fields
@@ -114,7 +114,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
             sprintf(print_text, "%s%s|", print_text, fields[current_field].name);       //Add the new field name and a | to print_text
         }
 
-        name_len++;     //Increment name_len in order to make room for a newline character
+        name_len++;     //Increment name_len in order to make room for a newline character and null terminater
         print_text = realloc(print_text, name_len);
         if(NULL == print_text){
             perror("POOP: Realloc error");
@@ -123,7 +123,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
         }
         sprintf(print_text, "%s\n", print_text);        //Add a newline character to print_text
 
-        error_check = write(dump_fd, print_text, name_len);     //Write print_text to the markdown file
+        error_check = write(dump_fd, print_text, name_len-1);     //Write print_text to the markdown file
         if(-1 == error_check){
             perror("POOP: Write error");
             num_of_records = -1;
@@ -135,16 +135,17 @@ int poop(char * table_name, char * dump_file, bool truncate){
             free(print_text);
             print_text = NULL;
         }
-        name_len = 4 * sizeof(char) * num_of_fields+1;
-        print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|) and newline
+        name_len = 4 * sizeof(char) * num_of_fields+2;
+        print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|), a newline, and a NUL byte
         memset(print_text, 0, name_len);
         
         for(current_field=0; current_field<num_of_fields; current_field++){
             sprintf(print_text, "%s:-:|", print_text);
         }
+
         sprintf(print_text, "%s\n", print_text);    //Add newline character to print_text
 
-        error_check = write(dump_fd, print_text, name_len);     //Write the Field name delimiter to the markdown file
+        error_check = write(dump_fd, print_text, name_len-1);     //Write the Field name delimiter to the markdown file
         if(-1 == error_check){
             perror("POOP: Write error");
             num_of_records = -1;
@@ -154,7 +155,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
 
     //Print records
     for(record=0; record<num_of_records; record++){     //Iterate through every record
-        name_len = 0;
+        name_len = 1;
 
         if(!print_table){
             print_color("~\n", RESET);      //If not dumping table, print a newline and reset the color/emphasis
@@ -170,6 +171,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
                     num_of_records = -1;
                     goto cleanup;
                 }
+
                 sprintf(string_data, "%i", int_data);       //Convert int_data into string and place it into string_data
             }
             else if(CHAR == fields[current_field].data_len){        //If data type is byte
@@ -179,6 +181,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
                     num_of_records = -1;
                     goto cleanup;
                 }
+
                 sprintf(string_data, "%i", byte_data);      //Convert byte_data into string and place it into string_data
             }
             else if(STRING == fields[current_field].data_len){      //If data type is string
@@ -202,7 +205,7 @@ int poop(char * table_name, char * dump_file, bool truncate){
                 print_color("~ ", RESET);
             }
             else{       //If dumping table
-                name_len += strnlen(string_data, fields[current_field].data_len)+1;    //Name len is length of string_data and 1
+                name_len += strnlen(string_data, STRING_LEN)+1;    //Name len is length of string_data and 1
                 print_text = realloc(print_text, name_len); 
                 if(NULL == print_text){
                     perror("POOP: Realloc error");
@@ -212,21 +215,15 @@ int poop(char * table_name, char * dump_file, bool truncate){
                 if(0 == current_field){
                     memset(print_text, 0, name_len);
                 }
+
                 sprintf(print_text, "%s%s|", print_text, string_data);
-                
             }
         }
 
         if(print_table){
-            print_text = realloc(print_text, name_len+1);
-            if(NULL == print_text){
-                perror("POOP: Realloc error");
-                num_of_records = -1;
-                goto cleanup;
-            }
-            print_text[name_len] = '\n';
+            print_text[name_len-1] = '\n';
 
-            error_check = write(dump_fd, print_text, name_len+1);    //Write print_text to dump file
+            error_check = write(dump_fd, print_text, name_len);    //Write print_text to dump file
             if(-1 == error_check){
                 perror("POOP: Write error");
                 num_of_records = -1;
@@ -318,4 +315,31 @@ cleanup:
         free(directory);
     }
     return num_of_tables;
+}
+
+int execute_query(query input_query){
+    int i = 0;
+    int j = 0;
+    int num_of_fields = 0;
+    int fds[MAX_CALLS] = {0};
+    int * get_fields_indexes[MAX_CALLS] = {0};
+    field * fields = NULL;
+
+    if(FROM != input_query.queryers[0] || GET != input_query.queryers[1]){
+        print_color("~~ERROR: INVALID QUERY FORMAT~\n", B_RED, BOLD, RESET);
+        goto cleanup;
+    }
+
+    for(i=0; i<MAX_CALLS; i++){
+        if(0 != input_query.tables[i][0]){      //Check that the table file path is initialized
+            fds[i] = open(input_query.tables[i], O_RDONLY);     //Open table file
+            if(-1 == fds[i]){
+                perror("EXECUTE_QUERY: Open error");
+                goto cleanup;
+            }
+        }
+    }
+
+cleanup:
+    return 0;
 }

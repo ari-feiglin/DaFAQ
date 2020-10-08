@@ -14,10 +14,10 @@ int main(int argc, char ** argv){
 
     create_database(database_name);
     create_table("table2.dfq");
-    switch_record("table2.dfq", -1);
-    switch_record("table2.dfq", -1);
+    edit_record_interfaces("table2.dfq", -1);
+    edit_record_interfaces("table2.dfq", -1);
 
     //poop("test.dfq", "table2.md", true);
-    diarrhea(".", "tables.md");
+    diarrhea(".", NULL);
 
 }
