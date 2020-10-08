@@ -8,11 +8,11 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
 ## <ins>**Version 0.2.0**</ins>
-<ins>**v0.1.0 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.2.0 (v0.2.0) was released October #, 2020
+<ins>**v0.2.0 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
+Version 0.2.0 (v0.2.0) was released October 09, 2020
 
 ### <ins>**v0.2.0 CHANGES:**</ins>
-A list of features added in version 0.1.0
+A list of features added in version 0.2.0
 * Even more bugfixes... (Like, a lot)
 * Changed the usage of an input mask. As this only affects the input of records, and not their storage, tables made in v0.1 are still compatible.
 * Added the ability to poop tables into a markdown (.md) file
