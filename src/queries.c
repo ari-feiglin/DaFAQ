@@ -84,7 +84,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
 
     if(!print_table){
         sprintf(print_text, "\n~`~%s:~\n\n", table_name);
-        print_color(print_text, BG_B_WHITE, FG,0,255,0, BOLD, RESET);       //Print the table name
+        print_color(print_text, BG_B_WHITE, FG,0,0,255, BOLD, RESET);       //Print the table name
         for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the table's fields
             rect_text(fields[current_field].name, (char **)&print_text, NAME_LEN);      //Rectangle-ify the table name
             print_color("~`~", BG_RED, FG,0,0,0, BOLD);

@@ -25,7 +25,7 @@ int create_table_interface(IN char * table_name){
 
 
     sprintf(prompt, "\n~`~CREATING TABLE %s~\n\n", table_name);
-    print_color(prompt, BG_WHITE, FG,0,0,150, BOLD, RESET);
+    print_color(prompt, BG_WHITE, FG,0,150,0, BOLD, RESET);
 
     while(true){
         valid = false;
@@ -81,7 +81,7 @@ int create_table_interface(IN char * table_name){
             new_field.data_len = STRING_LEN;
             valid = true;
 
-            print_color("``~Input mask (null to skip):~ ", BG,168,202,255, FG,0,255,0, BOLD, RESET);
+            print_color("``~Input mask (null to skip):~ ", BG,168,202,255, FG,0,0,255, BOLD, RESET);
             bytes_returned = get_raw_input(NULL, &input_mask);
             difference = strncmp("null", input_mask, 4);
             if(0 != difference){
@@ -140,7 +140,7 @@ cleanup:
  * @return: On success the number of records in the file, else -1
  * @notes: An input of record_num = -1 will append the reocord to the table
  */
-int edit_record_interfaces(IN char * table_name, IN int record_num){
+int switch_record_interface(IN char * table_name, IN int record_num){
     int num_of_fields = 0;
     int num_of_records = -1;
     int error_check = 0;
@@ -169,7 +169,7 @@ int edit_record_interfaces(IN char * table_name, IN int record_num){
     field_inputs = calloc(num_of_fields, sizeof(char *));
     input_lens = calloc(num_of_fields, sizeof(int));
 
-    print_color("\n~~~EDIT RECORD~\n\n", BG_MAGENTA, BOLD, B_GREEN, RESET);
+    print_color("\n~~~EDIT RECORD~\n\n", BG_WHITE, BOLD, MAGENTA, RESET);
     for(i=0; i<num_of_fields; i++){
         has_mask = false;
         print_color("~~", B_GREEN, BOLD);
@@ -269,4 +269,104 @@ cleanup:
     close(fd);
 
     return num_of_records;
+}
+
+error_code_t switch_field_interface(IN char * table_name){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int error_check = 0;
+    int datatype = 0;
+    int field_num = 0;
+    int difference = 0;
+    bool valid = false;
+    char * input = NULL;
+    char * field_name = NULL;
+    char * input_mask = NULL;
+    
+    print_color("\n~`~EDITING FIELD~\n\n", BG_WHITE, FG,0,255,0, BOLD, RESET);
+
+    print_color("~`~FIELD NUMBER:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+    error_check = get_raw_input(NULL, &input);
+    if(-1 == error_check){
+        return_value = ERROR_CODE_COULDNT_GET_INPUT;
+        goto cleanup;
+    }
+    field_num = (int)strtol(input, NULL, 10);
+
+    print_color("~`~FIELD NAME:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+    error_check = get_raw_input(NULL, &field_name);
+    if(-1 == error_check){
+        return_value = ERROR_CODE_COULDNT_GET_INPUT;
+        goto cleanup;
+    }
+
+    while(!valid){
+        print_color("~`~DATATYPE:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+        error_check = get_raw_input(NULL, &input);
+        if(-1 == error_check){
+            return_value = ERROR_CODE_COULDNT_GET_INPUT;
+            goto cleanup;
+        }
+        difference = strncmp("int", input, error_check);
+        if(0 == difference){
+            datatype = INT;
+            break;
+        }
+        difference = strncmp("char", input, error_check);
+        if(0 == difference){
+            datatype = CHAR;
+            break;
+        }
+        difference = strncmp("boolean", input, error_check);
+        if(0 == difference){
+            datatype = BOOLEAN;
+            break;
+        }
+        difference = strncmp("string", input, error_check);
+        if(0 == difference){
+            datatype = STRING;
+            break;
+        }
+
+        print_color("~~INVALID DATATYPE~\n", B_RED, BOLD, RESET);
+    }
+    input_mask = NULL;
+    if(STRING == datatype){
+        while(!valid){
+            print_color("~`~INPUT MASK: (null to skip)~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+            error_check = get_raw_input(NULL, &input_mask);
+            if(-1 == error_check){
+                return_value = ERROR_CODE_COULDNT_GET_INPUT;
+                goto cleanup;
+            }
+
+            difference = strncmp("null", input_mask, error_check);
+            if(0 == difference){
+                free(input_mask);
+                input_mask = NULL;
+                break;
+            }
+
+            valid = check_input_mask(input_mask);
+            if(!valid){
+                print_color("~~INVALID INPUT MASK~\n", BOLD, B_RED, RESET);
+            }
+        }
+    }
+
+    return_value = switch_field(table_name, field_name, datatype, input_mask, field_num);
+    if(ERROR_CODE_SUCCESS != return_value){
+        goto cleanup;
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    if(NULL != input)
+        free(input);
+    if(NULL != field_name)
+        free(field_name);
+    if(NULL != input_mask)
+        free(input_mask);
+
+    return return_value;
 }

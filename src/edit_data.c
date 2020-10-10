@@ -61,15 +61,16 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     
     num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
+        print_color("~~COULDNT GET NUMBER OF RECRODS~\n", RED, BOLD, RESET);
         return_value = ERROR_CODE_COULDNT_NUM_OF_RECORDS;
         goto cleanup;
     }
 
-    if(-1 == field_num){        //An input of field_num = -1 means the user wants to append a new field
+    if(-1 == field_num || field_num >= num_of_fields){        //An input of field_num = -1 means the user wants to append a new field
         field_num = num_of_fields;
         num_of_fields++;
         is_new_field = true;
-        if(0 == data_type || NULL == file_name ||  NULL == input_mask){
+        if(0 == data_type || NULL == file_name){
             print_color("~~MUST SPECIFY FIELD METADATA FOR AN APPENDING FIELD~\n", B_RED, BOLD, RESET);
             return_value = ERROR_CODE_INVALID_INPUT;
             goto cleanup;
@@ -127,7 +128,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
             goto cleanup;
         }
 
-        if(field_num == num_of_fields){     //If field is at end
+        if(field_num == num_of_fields-1){     //If field is at end
             error_check = write(fd, &num_of_records, sizeof(num_of_records));
             if(-1 == error_check){
                 perror("Write error");
@@ -315,11 +316,13 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
 
     is_valid = check_magic(fd, false);
     if(!is_valid){
+        print_color("~~INVALID FILE TYPE~\n", RED, BOLD, RESET);
         goto cleanup;
     }
 
     num_of_fields = get_fields(fd, &fields, false);
     if(-1 == num_of_fields){
+        num_of_records = -1;
         goto cleanup;
     }
 
@@ -331,6 +334,7 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
 
     num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
+        print_color("~~COULDNT GET NUMBER OF RECORDS~\n", RED, BOLD, RESET);
         goto cleanup;
     }
 
@@ -344,9 +348,9 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
     offset = lseek(fd, record_num * record_len, SEEK_CUR);
     if(-1 == offset){
         perror("Lseek error");
+        num_of_records = -1;
         goto cleanup;
     }
-
     for(i=0; i<num_of_fields; i++){
         if(NULL != data){
             free(data);
@@ -377,7 +381,7 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
 
         record_offset += fields[i].data_len;
     }
-
+    
     num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
         goto cleanup;

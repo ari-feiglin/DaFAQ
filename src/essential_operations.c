@@ -186,6 +186,7 @@ int get_num_of_records(IN int fd, IN int num_of_fields, IN bool preserve_offset)
 
     is_valid = check_magic(fd, false);
     if(!is_valid){
+        print_color("~~INVALID FILE TYPE~\n", RED, BOLD, RESET);
         goto cleanup;
     }
 
@@ -210,6 +211,7 @@ int get_num_of_records(IN int fd, IN int num_of_fields, IN bool preserve_offset)
             goto cleanup;
         }
     }
+
 
 cleanup:
     return num_of_records;

@@ -15,7 +15,7 @@ error_code_t create_database(IN char * name){
     error_check = mkdir(name, 0);       //Make new Database directory
     if(-1 == error_check){
         if(EEXIST == errno){        //If directory already exists, don't fail
-            print_color("~`~Directory already exists. Entering...~\n", BG_BLACK, FG,0,0,255, BOLD, RESET);
+            print_color("~`~Directory already exists. Entering...~\n", BG_BLACK, FG,0,255,0, BOLD, RESET);
             error_check = chdir(name);      //Go into already existing directory
             if(-1 == error_check){
                 perror("Chdir error");
