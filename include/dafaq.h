@@ -1,3 +1,6 @@
+#ifndef DAFAQ
+#define DAFAQ
+
 #include "CColor.h"
 #include "standard.h"
 #include <stdbool.h>
@@ -6,9 +9,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-
-#define IN
-#define OUT
 
 #define STRING_LEN (256)
 #define NAME_LEN (32)
@@ -28,10 +28,12 @@ typedef enum error_code_e{
     ERROR_CODE_COULDNT_READ,
     ERROR_CODE_COULDNT_LSEEK,
     ERROR_CODE_COULDNT_GET_FIELDS,
-    ERROR_CODE_COULDNT_NUM_OF_RECORDS,
+    ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS,
     ERROR_CODE_COULDNT_ALLOCATE_MEMORY,
     ERROR_CODE_INVALID_INPUT,
-    ERROR_CODE_INVALID_DATATYPE
+    ERROR_CODE_COULDNT_GET_INPUT,
+    ERROR_CODE_INVALID_DATATYPE,
+    ERROR_CODE_INDEX_OUT_OF_BOUNDS
 } error_code_t;
 
 typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
@@ -52,6 +54,13 @@ typedef struct field{
     char input_mask[NAME_LEN];
 }field;
 
+typedef struct record_field{
+    off_t record_offset;
+    off_t record_field_offset;
+    int field_index;
+    char * data;
+}record_field;
+
 char * magic;
 char * extension;
 int magic_len;
@@ -70,6 +79,8 @@ bool check_extension(char * table_name);
 bool check_input_mask(char * input_mask);
 int valid_input(char * input, char * input_mask);
 int get_len_of_record(int fd, bool preserve_offset);
+error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset);
+error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);
@@ -81,4 +92,7 @@ int diarrhea(char * database_name, char * dump_name);
 
 //Interfaces
 int create_table_interface(char * table_name);
-int edit_record_interfaces(char * name, int record_num);
+int switch_record_interface(char * name, int record_num);
+error_code_t switch_field_interface(IN char * table_name);
+
+#endif

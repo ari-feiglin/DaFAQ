@@ -62,7 +62,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
         print_color("~~COULDNT GET NUMBER OF RECRODS~\n", RED, BOLD, RESET);
-        return_value = ERROR_CODE_COULDNT_NUM_OF_RECORDS;
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
         goto cleanup;
     }
 
@@ -341,7 +341,7 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
     if(record_num > num_of_records - 1){
         record_num = num_of_records;
     }
-    if(-1 == record_num){
+    if(record_num <= -1){
         record_num = num_of_records;
     }
 

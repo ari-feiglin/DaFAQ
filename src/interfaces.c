@@ -34,7 +34,7 @@ int create_table_interface(IN char * table_name){
             free(field_name);
             field_name = NULL;
         }
-        sprintf(prompt, "~`~Field number %d:~\n", num_of_fields);
+        sprintf(prompt, "~`~Field number %d name:~\n", num_of_fields);
         print_color(prompt, BG_WHITE, FG,0,0,0, BOLD, RESET);
         get_raw_input(NULL, &field_name);
 
@@ -135,12 +135,13 @@ cleanup:
 /** 
  * @brief: An interactive text interface that gets user input and calls switch_record with it
  * @param[IN] table_name: The name of the table file to operate on
- * @param[IN] record_num: The index of the record to switch
- * 
+ * @param[IN] record_num: The number of the target record to change. An input of record_num=-2
+ *                           will allow for user input of the record_num
  * @return: On success the number of records in the file, else -1
- * @notes: An input of record_num = -1 will append the reocord to the table
+ * @notes: An input of record_num = -1 will append the reocord to the table. The function allows for
+ *         caller input so the implementer can allow the user to append records.
  */
-int switch_record_interface(IN char * table_name, IN int record_num){
+int switch_record_interface(IN char * table_name, int record_num){
     int num_of_fields = 0;
     int num_of_records = -1;
     int error_check = 0;
@@ -170,6 +171,16 @@ int switch_record_interface(IN char * table_name, IN int record_num){
     input_lens = calloc(num_of_fields, sizeof(int));
 
     print_color("\n~~~EDIT RECORD~\n\n", BG_WHITE, BOLD, MAGENTA, RESET);
+
+    if(-2 == record_num){
+        print_color("~~RECORD NUMBER:~\n", B_GREEN, BOLD, RESET);
+        error_check = get_raw_input(NULL, &input);
+        if(-1 == error_check){
+            goto cleanup;
+        }
+        record_num = (int)strtol(input, NULL, 10);
+    }
+
     for(i=0; i<num_of_fields; i++){
         has_mask = false;
         print_color("~~", B_GREEN, BOLD);
@@ -271,6 +282,14 @@ cleanup:
     return num_of_records;
 }
 
+/**
+ * @brief: Aninteractive text interface that gets user input and calls switch_field with it
+ * @param[IN] table_name: The name of the table file to edit
+ * 
+ * @return: ERROR_CODE_SUCCESS on success, else an indicative error code of type error_code_t
+ * @notes: The function doesn't allow for caller input of field_num because it is assumed that if
+ *         the implementer wanted to change a field, they would use switch_field.
+ */
 error_code_t switch_field_interface(IN char * table_name){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int error_check = 0;
@@ -281,10 +300,11 @@ error_code_t switch_field_interface(IN char * table_name){
     char * input = NULL;
     char * field_name = NULL;
     char * input_mask = NULL;
+    char * data_type_list = "char, int, string, boolean";
     
-    print_color("\n~`~EDITING FIELD~\n\n", BG_WHITE, FG,0,255,0, BOLD, RESET);
+    print_color("\n~`~EDITING FIELD~\n\n", BG_WHITE, FG,0,100,0, BOLD, RESET);
 
-    print_color("~`~FIELD NUMBER:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+    print_color("~`~Field number:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
     error_check = get_raw_input(NULL, &input);
     if(-1 == error_check){
         return_value = ERROR_CODE_COULDNT_GET_INPUT;
@@ -292,7 +312,7 @@ error_code_t switch_field_interface(IN char * table_name){
     }
     field_num = (int)strtol(input, NULL, 10);
 
-    print_color("~`~FIELD NAME:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+    print_color("~`~Field name:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
     error_check = get_raw_input(NULL, &field_name);
     if(-1 == error_check){
         return_value = ERROR_CODE_COULDNT_GET_INPUT;
@@ -300,7 +320,9 @@ error_code_t switch_field_interface(IN char * table_name){
     }
 
     while(!valid){
-        print_color("~`~DATATYPE:~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+        print_color("~`~", BG_WHITE, FG,0,0,0, BOLD);
+        printf("Datatype: (%s)", data_type_list);
+        print_color("~\n", RESET);
         error_check = get_raw_input(NULL, &input);
         if(-1 == error_check){
             return_value = ERROR_CODE_COULDNT_GET_INPUT;
@@ -332,7 +354,7 @@ error_code_t switch_field_interface(IN char * table_name){
     input_mask = NULL;
     if(STRING == datatype){
         while(!valid){
-            print_color("~`~INPUT MASK: (null to skip)~\n", BG_WHITE, FG,0,0,0, BOLD, RESET);
+            print_color("``~Input mask (null to skip):~ ", BG,168,202,255, FG,0,0,255, BOLD, RESET);
             error_check = get_raw_input(NULL, &input_mask);
             if(-1 == error_check){
                 return_value = ERROR_CODE_COULDNT_GET_INPUT;

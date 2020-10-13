@@ -167,7 +167,7 @@ cleanup:
  * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
  *                             the function was run.
  * 
- * @return: On success the number of records in the table file, else -1
+ * @return:On success the number of records in the table file, else -1
  * @notes: It is assumed that the user already called get_fields, so get_num_of_records doesn't get the
  *         number of fields itself.
  */
@@ -443,4 +443,157 @@ int valid_input(IN char * input, IN char * input_mask){
 
 cleanup:
     return is_valid;
+}
+
+/**
+ * @brief: Reads a record into the input record_field ** record (which is a pointer to the record)
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[OUT] record: A pointer to the record (which is an array of record_fields)
+ * @param[IN] record_number: The target index of the record that the caller wants
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
+ * @notes: A record is a collection of record_field structs (see dafaq.h for the struct)
+ */
+error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int number_of_fields = 0;
+    int number_of_records = 0;
+    int record_len = 0;
+    int error_check = 0;
+    int i = 0;
+    off_t offset = 0;
+    off_t old_offset = 0;
+    field * fields = NULL;
+
+    old_offset = lseek(fd, 0, SEEK_CUR);
+    if(-1 == old_offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+
+    number_of_fields = get_fields(fd, &fields, false);
+    if(-1 == number_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_FIELDS;
+        goto cleanup;
+    }
+
+    for(i=0; i<number_of_fields; i++){
+        record_len += fields[i].data_len;
+    }
+
+    number_of_records = get_num_of_records(fd, number_of_fields, false);
+    if(-1 == number_of_records){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
+        goto cleanup;
+    }
+
+    if(record_number > number_of_records){
+        print_color("~~RECORD NUMBER OUT OF BOUNDS~\n", RED, BOLD, RESET);
+        record_number = ERROR_CODE_INDEX_OUT_OF_BOUNDS;
+        goto cleanup;
+    }
+
+    *record = calloc(number_of_fields, sizeof(record_field));
+    if(NULL == *record){
+        perror("GET_RECORD: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+
+    offset = lseek(fd, record_number * record_len, SEEK_CUR);
+    if(-1 == offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+    for(i=0; i<number_of_fields; i++){
+        (*record)[i].data = malloc(fields[i].data_len);
+        if(NULL == (*record)[i].data){
+            perror("GET_RECORD: Malloc error");
+            return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+            goto cleanup;
+        }
+
+        error_check = read(fd, (*record)[i].data, fields[i].data_len);
+        if(-1 == error_check){
+            perror("GET_RECORD: Read error");
+            return_value = ERROR_CODE_COULDNT_READ;
+            goto cleanup;
+        }
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+    
+cleanup:
+    if(ERROR_CODE_SUCCESS != return_value){
+        for(i=0; i<number_of_fields; i++){
+            if(NULL != (*record)[i].data)
+                free((*record)[i].data);
+        }
+        if(NULL != record)
+            free(record);
+    }
+
+    return return_value;
+}
+
+/**
+ * @brief: Reads all records in a table file into an array of records (records)
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[OUT] records: An array of records that the caller wants to fill out with the records stored 
+ *                      in the table file
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: The number of records in the table file on success, else -1
+ * @notes: records is a pointer to an array of records, and records are arrays of record_fields, so
+ *         records is a pointer to an array of arrays of record_fields (record_field ***). Kind of
+ *         confusing, I know.
+ * 
+ */
+int get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset){
+    int num_of_fields = 0;
+    int num_of_records = -1;
+    int i = 0;
+    error_code_t error_check = 0;
+
+    num_of_fields = get_num_of_fields(fd, false);
+    if(-1 == num_of_fields){
+        goto cleanup;
+    }
+
+    num_of_records = get_num_of_records(fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        goto cleanup;
+    }
+
+    *records = calloc(num_of_records, sizeof(record_field *));
+    if(NULL == *records){
+        perror("GET_ALL_RECORDS: Calloc error");
+        num_of_records = -1;
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_records; i++){
+        error_check = get_record(fd, &((*records)[i]), i, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    if(-1 == num_of_records){
+        if(NULL != *records){
+            for(i=0; i<num_of_records; i++){
+                if(NULL != (*records)[i]){
+                    free((*records)[i]);
+                }
+            }
+            free(*records);
+        }
+    }    
+    return num_of_records;
 }

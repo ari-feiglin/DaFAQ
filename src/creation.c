@@ -4,7 +4,7 @@
  * @brief: Creates a database
  * @param[IN] name: Name of the database directory to create
  * 
- * @return: ERROR_CODE_SUCCESS on succes, else an indicative error of error_code_t 
+ * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t 
  * @notes: Creates a directory whose name is input in the variable name and changes the working directory to it.
  *         This is an important function for all successive function calls. (Save diahrrea.)
  */
@@ -54,7 +54,7 @@ cleanup:
  * @param[IN] num_of_fields: The number of fields to add to the table file.
  * @param[IN] fields: An array of fields to write to the table file
  * 
- * @return: ERROR_CODE_SUCCESS on success, else an indicative error code of error_code_t
+ * @return: ERROR_CODE_SUCCESS on success, else an indicative error code of type error_code_t
  * @notes: This function will remove any other file with the same name as table_name in the working directory. 
  */
 error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field * fields){

@@ -5,6 +5,9 @@
 
 #define BUFFER_SIZE (1024)
 
+#define IN
+#define OUT
+
 #define MAX(x, y) ((x > y) ? x : y)
 #define MIN(x, y) ((x > y) ? y : x)
 

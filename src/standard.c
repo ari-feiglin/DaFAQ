@@ -7,7 +7,16 @@ struct termios attributes;
 
 //This file includes basic/standard functions (Here raw_input and lower)
 
-int get_raw_input(char * prompt, char ** input){
+/**
+ * @brief: Gets raw input
+ * @param[IN] prompt: The prompt to print to indicate that it is waiting for user input.
+ * @param[OUT] input: A buffer to fill with user input
+ * 
+ * @return: The number of bytes that the user input
+ * @notes: Since this is _raw_ input, the input will be a string (or array of characters). It is up to 
+ *         the caller to change the input acccording to whatever datatype is needed
+ */
+int get_raw_input(IN char * prompt, OUT char ** input){
     size_t size = 0;
     int bytes_read = 0;
     int i = 0;
@@ -33,7 +42,15 @@ int get_raw_input(char * prompt, char ** input){
     return bytes_read;
 }
 
-int lower(char * string, int len){
+/**
+ * @brief: Makes all english letters in a string lowercase
+ * @param[OUT] string: The string to operate on (cannot be NULL for obvious reasons)
+ * @param[IN] len: The length of the string (only matters if len is 1, denoting a character)
+ * 
+ * @return: The length of the string
+ * @notes: Any input of len other than 1 will not matter, and will be discarded by the function
+ */
+int lower(OUT char * string, IN int len){
     int i = 0;
 
     if(1 != len){
@@ -54,7 +71,15 @@ cleanup:
     return len;
 }
 
-int upper(char * string, int len){
+/**
+ * @brief: Makes all english letters in a string uppercase
+ * @param[OUT] string: The string to operate on (cannot be NULL for obvious reasons)
+ * @param[IN] len: The length of the string (only matters if len is 1, denoting a character)
+ * 
+ * @return: The length of the string
+ * @notes: Any input of len other than 1 will not matter, and will be discarded by the function
+ */
+int upper(OUT char * string, IN int len){
     int i = 0;
 
     if(1 != len){
@@ -75,6 +100,12 @@ cleanup:
     return len;
 }
 
+/**
+ * @brief: Turns on or off ECHO in a terminal
+ * @param[IN] on: True if ECHO should be turned on, false for off
+ * 
+ * @return: 0 on success, else -1
+ */
 int change_echo(bool on){
     int error_check = 0;
 
@@ -100,7 +131,17 @@ cleanup:
     return error_check;
 }
 
-int center_text(char * text, char ** centered_text, int len){
+/**
+ * @brief: Creates a new string of spaces and places the old string in the middle
+ * @param[IN] text: The old string to center
+ * @param[OUT] centered_text: A pointer to a string (preferrably a NULL pointer) that will house
+ *                            the centered text.
+ * @param[IN] len: The length of the centered text
+ * 
+ * @returns: 0 on success, else -1
+ * @notes: If len is less than the string length of text, text will be cut off
+ */
+int center_text(IN char * text, OUT char ** centered_text, IN int len){
     int return_val = -1;
     int text_len = 0;
     int delay_len = 0;
@@ -126,11 +167,22 @@ int center_text(char * text, char ** centered_text, int len){
     delay_len = (len-text_len)/2;
 
     memcpy(*centered_text+delay_len, text, MIN(text_len, len));
+    return_val = 0;
 
 cleanup:
     return return_val;
 }
 
+/**
+ * @brief: Creates a new string of spaces and places the old string at the beginning
+ * @param[IN] text: The old string to rectangle-ify
+ * @param[OUT] rectangled_text: A pointer to a string (preferrably a NULL pointer) that will house
+ *                              the rectangled text.
+ * @param[IN] len: The length of the rectangled text
+ * 
+ * @returns: 0 on success, else -1
+ * @notes: If len is less than the string length of text, text will be cut off
+ */
 int rect_text(char * text, char ** rectangled_text, int len){
     int return_val = -1;
     int text_len = 0;
@@ -159,7 +211,17 @@ cleanup:
     return return_val;
 }
 
-int ntos(char * number_data, char * string, int num_of_numbers, int num_len){
+/**
+ * @brief: Converts a byte array of numbers to a string
+ * @param[IN] number_data: The byte array housing the numbers
+ * @param[OUT] string: The string that will house the text-form numbers (cannot be NULL)
+ * @param[IN] num_of_numbers: The number of numbers in the byte array
+ * @param[IN] num_len: The number of bytes each number consists of (4 for int, 1 for char)
+ * 
+ * @return: The length of the new string
+ * @notes: For some reason I didn't make it so that string can be NULL, but I might change that later
+ */
+int ntos(IN char * number_data, OUT char * string, IN int num_of_numbers, IN int num_len){
     char byte_num = 0;
     int int_num = 0;
     int error_check = 0;
@@ -194,7 +256,6 @@ int ntos(char * number_data, char * string, int num_of_numbers, int num_len){
             else{
                string_len += floor(log10(byte_num)+1);
             }
-            printf("%i\n", string_len);
 
             sprintf(string, "%s%i", string, byte_num);
         }
