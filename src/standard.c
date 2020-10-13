@@ -7,6 +7,13 @@ struct termios attributes;
 
 //This file includes basic/standard functions (Here raw_input and lower)
 
+void swap(int * a, int * b){
+    int temp = *a;
+
+    *a = *b;
+    *b = temp;
+}
+
 /**
  * @brief: Gets raw input
  * @param[IN] prompt: The prompt to print to indicate that it is waiting for user input.

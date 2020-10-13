@@ -30,6 +30,7 @@ typedef enum error_code_e{
     ERROR_CODE_COULDNT_GET_FIELDS,
     ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS,
     ERROR_CODE_COULDNT_ALLOCATE_MEMORY,
+     ERROR_CODE_COULDNT_GET_LEN_OF_RECORD,
     ERROR_CODE_INVALID_INPUT,
     ERROR_CODE_COULDNT_GET_INPUT,
     ERROR_CODE_INVALID_DATATYPE,
@@ -55,9 +56,10 @@ typedef struct field{
 }field;
 
 typedef struct record_field{
-    off_t record_offset;
-    off_t record_field_offset;
+    int record_num;
+    int record_field_offset;    //Offset of field relative to the start of the record
     int field_index;
+    int data_len;
     char * data;
 }record_field;
 
@@ -79,8 +81,10 @@ bool check_extension(char * table_name);
 bool check_input_mask(char * input_mask);
 int valid_input(char * input, char * input_mask);
 int get_len_of_record(int fd, bool preserve_offset);
+error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset);
 error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset);
 error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
+error_code_t quicksort_record_fields(int table_fd, char * sort_file_name, int field_index);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);

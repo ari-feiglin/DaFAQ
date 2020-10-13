@@ -11,6 +11,7 @@
 #define MAX(x, y) ((x > y) ? x : y)
 #define MIN(x, y) ((x > y) ? y : x)
 
+void swap(int * a, int * b);
 int get_raw_input(char * prompt, char ** input);
 int lower(char * string, int len);
 int upper(char * string, int len);

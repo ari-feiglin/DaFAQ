@@ -223,7 +223,7 @@ cleanup:
  * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
  *                             the function was run.
  * 
- * @return: On success the length of a reocord, else -1
+ * @return: On success the length of a record, else -1
  * @notes: For some reason, get_len_of_records utilizes get_fields instead of having an array of fields
  *         as input. I can't remember why. I'll look into this later maybe.
  */
@@ -446,6 +446,81 @@ cleanup:
 }
 
 /**
+ * @brief: Gets a record_field
+ * 
+ * 
+ * 
+ * @notes: target_record_field must already be allocated
+ */
+error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int num_of_fields = 0;
+    int num_of_records = 0;
+    int record_len = 0;
+    int error_check = 0;
+    int i = 0;
+    off_t offset = 0;
+    off_t old_offset = 0;
+    field * fields = NULL;
+
+    if(NULL == target_record_field){
+        print_color("~~Target record_field must already be allocated before being passed to get_record_field!~", RED, BOLD, RESET);
+        return_value = ERROR_CODE_INVALID_INPUT;
+        goto cleanup;
+    }
+
+    old_offset = lseek(fd, 0, SEEK_CUR);
+    if(-1 == old_offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+
+    num_of_fields = get_fields(fd, &fields, false);
+    if(-1 == num_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_FIELDS;
+        goto cleanup;
+    }
+
+    record_len = get_len_of_record(fd, false);
+    if(-1 == record_len){
+        return_value = ERROR_CODE_COULDNT_GET_LEN_OF_RECORD;
+        goto cleanup;
+    }
+
+    target_record_field->record_num = record_number;
+    target_record_field->record_field_offset = 0;
+    target_record_field->field_index = field_num;
+    target_record_field->data_len = fields[field_num].data_len;
+    target_record_field->data = malloc(target_record_field->data_len);
+
+    for(i=0; i<field_num; i++){
+        target_record_field->record_field_offset += fields[i].data_len;
+    }
+
+    offset = magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_number*record_len + target_record_field->record_field_offset;
+    offset = lseek(fd, offset, SEEK_SET);
+    if(-1 == offset){
+        perror("GET_RECORD_FIELD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+    error_check = read(fd, target_record_field->data, target_record_field->data_len);
+    if(-1 == error_check){
+        perror("GET_RECORD_FIELD: Read error");
+        return_value = ERROR_CODE_COULDNT_READ;
+        goto cleanup;
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    if(NULL != fields)
+        free(fields);
+    return return_value;
+}
+
+/**
  * @brief: Reads a record into the input record_field ** record (which is a pointer to the record)
  * @param[IN] fd: The file descriptor of the table file
  * @param[OUT] record: A pointer to the record (which is an array of record_fields)
@@ -461,6 +536,7 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
     int number_of_fields = 0;
     int number_of_records = 0;
     int record_len = 0;
+    int record_field_offset = 0;
     int error_check = 0;
     int i = 0;
     off_t offset = 0;
@@ -503,6 +579,15 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
         goto cleanup;
     }
 
+    for(i=0; i<number_of_fields; i++){
+        return_value = get_record_field(fd, &(*record)[i], record_number, i, false);
+        if(ERROR_CODE_SUCCESS != return_value){
+            goto cleanup;
+        }
+        printf("DATA OUTSIDE: %s\n", (&(*record)[i])->data);
+    }
+
+/*
     offset = lseek(fd, record_number * record_len, SEEK_CUR);
     if(-1 == offset){
         perror("GET_RECORD: Lseek error");
@@ -511,6 +596,10 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
     }
     for(i=0; i<number_of_fields; i++){
         (*record)[i].data = malloc(fields[i].data_len);
+        (*record)[i].data_len = fields[i].data_len;
+        (*record)[i].field_index = i;
+        (*record)[i].record_num = record_number;
+        (*record)[i].record_field_offset = record_field_offset;
         if(NULL == (*record)[i].data){
             perror("GET_RECORD: Malloc error");
             return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
@@ -523,7 +612,10 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
             return_value = ERROR_CODE_COULDNT_READ;
             goto cleanup;
         }
+
+        record_field_offset += fields[i].data_len;
     }
+*/
 
     return_value = ERROR_CODE_SUCCESS;
     
@@ -580,6 +672,7 @@ int get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_of
     for(i=0; i<num_of_records; i++){
         error_check = get_record(fd, &((*records)[i]), i, false);
         if(ERROR_CODE_SUCCESS != error_check){
+            num_of_records = -1;
             goto cleanup;
         }
     }
@@ -596,4 +689,132 @@ cleanup:
         }
     }    
     return num_of_records;
+}
+
+int partition_record_fields(record_field * record_fields, int low, int high){
+    int i = -1;
+    int j = 0;
+    int value = 0;
+    int partition = 0;
+    record_field intermediary;
+
+    partition = *((int *)record_fields[high].data);
+
+    for(j=low; j<high; j++){
+        value = *((int *)record_fields[j].data);
+
+        if(value <= partition){
+            i++;
+            intermediary = record_fields[i];
+            record_fields[i] = record_fields[j];
+            record_fields[j] = intermediary;
+        }
+    }
+
+    i++;
+    intermediary = record_fields[i];
+    record_fields[i] = record_fields[j];
+    record_fields[j] = intermediary;
+
+    return i;
+}
+/**
+ * @brief: Given an array of record fields (meant to be all from different records) it sorts
+ *         them by the value of their data and writes them (sorted) 
+ */
+int quicksort_record_fields(int table_fd, char * sort_file_name, int field_index){
+    int error_check = 0;
+    int sort_file_fd = -1;
+    int num_of_records = 0;
+    int num_of_fields = 0;
+    int i = 0;
+    int high = 0;
+    int low = 0;
+    int partition_index = 0;
+    int total_data_len = 0;
+    int sp = 0;     //Stack pointer
+    int * stack = NULL;
+    record_field * record_fields = NULL;
+
+    num_of_fields = get_num_of_fields(table_fd, false);
+    if(-1 == num_of_fields){
+        goto cleanup;
+    }
+
+    num_of_records = get_num_of_records(table_fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        goto cleanup;
+    }
+
+    record_fields = calloc(num_of_records, sizeof(record_field));
+    if(NULL == record_fields){
+        perror("QUICKSORT_RECORD_FIELDS: Calloc error");
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_records; i++){
+        error_check = get_record_field(table_fd, &record_fields[i], i, field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+    }
+
+    //Iterative Quicksort. Definitley not copied from GeeksForGeeks
+    high = num_of_records - 1;
+    low = 0;
+    stack = calloc(high - low + 1, sizeof(int));
+
+    //Pushing low and high onto the stack
+    stack[sp] = low;
+    sp++;
+    stack[sp] = high;
+    
+    while(sp >= 0){
+        //Popping high and low off of the stack
+        high = stack[sp];
+        sp--;
+        low = stack[sp];
+        sp--;
+
+        partition_index = partition_record_fields(record_fields, low, high);
+
+        /**If more than one element exists before the partition (one element will be ordered), push
+         * The new high and low onto the stack.
+         */
+        if(partition_index > low + 1){
+           sp++;
+           stack[sp] = low;
+           sp++;
+           stack[sp] = partition_index - 1;
+        }
+
+        /**If more than one element exists after the partition (one element will be ordered), push
+         * The new high and low onto the stack.
+         */
+        if(partition_index < high - 1){
+            sp++;
+            stack[sp] = partition_index + 1;
+            sp++;
+            stack[sp] = high;
+        }
+    }
+
+    sort_file_fd = open(sort_file_name, O_RDWR | O_TRUNC | O_CREAT, 0666);
+    if(-1 == sort_file_fd){
+        perror("QUICKSORT_RECORD_FIELDS: Open error");
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_records; i++){
+        error_check = write(sort_file_fd, &(record_fields[i].record_num), sizeof(record_fields[i].record_num));
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Write error");
+            close(sort_file_fd);
+            sort_file_fd = -1;
+            goto cleanup;
+        }
+    }
+    
+cleanup:
+    return sort_file_fd;
 }
