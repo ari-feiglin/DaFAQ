@@ -40,10 +40,11 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
 
     fd = open(file_name, O_RDWR);
     if(-1 == fd){
-        perror("Open error");
+        perror("SWITCH_FIELD: Open error");
         return_value = ERROR_CODE_COULDNT_OPEN;
         goto cleanup;
     }
+
     num_of_fields = get_fields(fd, &old_fields, false);
     if(-1 == num_of_fields){
         return_value = ERROR_CODE_COULDNT_GET_FIELDS;
@@ -70,7 +71,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
         field_num = num_of_fields;
         num_of_fields++;
         is_new_field = true;
-        if(0 == data_type || NULL == file_name){
+        if(0 == data_type || NULL == field_name){
             print_color("~~MUST SPECIFY FIELD METADATA FOR AN APPENDING FIELD~\n", B_RED, BOLD, RESET);
             return_value = ERROR_CODE_INVALID_INPUT;
             goto cleanup;
@@ -277,8 +278,10 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     return_value = ERROR_CODE_SUCCESS;
 
 cleanup:
-    close(fd);
-    close(new_fd);
+    if(-1 != fd)
+        close(fd);
+    if(-1 != new_fd)
+        close(new_fd);
     if(record_data)
         free(record_data);
     if(fields)
@@ -301,8 +304,9 @@ cleanup:
  *         record_num is greater than the number of records in the table file. Record_input have num_of_fields elements, or there 
  *         will be a large chance of a SEGFAULT. Every element in input_lens must be equal to or less than the the datatype of the
  *         field it corresponds to. This is to allow the user to not have to pad input strings to the required 256 bytes.
+ *         This function also overwrites the number of records in the sort file to be 0, so the queryer knows to rewrite it.
  */
-int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** record_input){
+int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** record_input, int sort_file_fd){
     bool is_valid = false;
     int num_of_fields = 0;
     int num_of_records = -1;
@@ -401,6 +405,24 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
             num_of_records = -1;
             goto cleanup;
         }
+    }
+
+    error_check = lseek(sort_file_fd, 0, SEEK_SET);
+    if(-1 == error_check){
+        perror("SWITCH_RECORD: Lseek error");
+        num_of_records = -1;
+        goto cleanup;
+    }
+
+    error_check = 0;        /* I'm sorry! I'm sorry! I just need a variable to equal 0 so I can rewrite the number of records in
+                             * the sort file to be 0, so the queryer will understand to rewrite it.
+                             */
+
+    error_check = write(sort_file_fd, &error_check, sizeof(error_check));
+    if(-1 == error_check){
+        perror("SWITCH_RECORD: Write error");
+        num_of_records = -1;
+        goto cleanup;
     }
 
 cleanup:

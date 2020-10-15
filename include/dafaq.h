@@ -26,15 +26,19 @@ typedef enum error_code_e{
     ERROR_CODE_COULDNT_RENAME,
     ERROR_CODE_COULDNT_WRITE,
     ERROR_CODE_COULDNT_READ,
+    ERROR_CODE_COULDNT_TRUNCATE,
     ERROR_CODE_COULDNT_LSEEK,
+    ERROR_CODE_COULDNT_GET_NUM_OF_FIELDS,
     ERROR_CODE_COULDNT_GET_FIELDS,
     ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS,
+    ERROR_CODE_COULDNT_GET_RECORD,
     ERROR_CODE_COULDNT_ALLOCATE_MEMORY,
-     ERROR_CODE_COULDNT_GET_LEN_OF_RECORD,
+    ERROR_CODE_COULDNT_GET_LEN_OF_RECORD,
     ERROR_CODE_INVALID_INPUT,
     ERROR_CODE_COULDNT_GET_INPUT,
     ERROR_CODE_INVALID_DATATYPE,
-    ERROR_CODE_INDEX_OUT_OF_BOUNDS
+    ERROR_CODE_INDEX_OUT_OF_BOUNDS,
+    ERROR_CODE_INVALID_FILE
 } error_code_t;
 
 typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
@@ -65,6 +69,7 @@ typedef struct record_field{
 
 char * magic;
 char * extension;
+char * sort_extension;
 int magic_len;
 int extension_len;
 
@@ -81,16 +86,19 @@ bool check_extension(char * table_name);
 bool check_input_mask(char * input_mask);
 int valid_input(char * input, char * input_mask);
 int get_len_of_record(int fd, bool preserve_offset);
-error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset);
-error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset);
-error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
-error_code_t quicksort_record_fields(int table_fd, char * sort_file_name, int field_index);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);
-int switch_record(int fd, int record_num, int * input_lens, char ** field_input);
+int switch_record(int fd, int record_num, int * input_lens, char ** field_input, int sort_file_fd);
 
 //Queries
+error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset);
+error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset);
+error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
+error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_index, bool truncate);
+error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, int field_index, bool ** valid_record_indexes);
+
+//Pooping
 int poop(char * table_name, char * dump_file, bool truncate);
 int diarrhea(char * database_name, char * dump_name);
 

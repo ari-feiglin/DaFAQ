@@ -1,363 +1,679 @@
 #include "dafaq.h"
-#include <dirent.h>
 
 /**
- * @brief: Prints/writes a table file in table form
- * @param[IN] table_name: The name of the table file
- * @param[IN] dump_file: The name of the markdown file to dump the output table into
- * @param[IN] truncate: If a dump file was specified, if it should truncate it
+ * @brief: Gets a field from a record
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[OUT] target_record_field: A pointer to the record_field to fill
+ * @param[IN] record_number: The number of the record from which to retrieve the field
+ * @param[IN] field_num: The number/index of the field to retrieve
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
  * 
- * @return: On success number of records in the table file, -1 on error
- * @notes: An input of dump_file = NULL will print the table to stdout and truncate will be ignored.
+ * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
+ * @notes: target_record_field must already be allocated
  */
-int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
-    field * fields = NULL;
+error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int num_of_fields = 0;
+    int num_of_records = 0;
+    int record_len = 0;
     int error_check = 0;
+    int i = 0;
+    off_t offset = 0;
+    off_t old_offset = 0;
+    field * fields = NULL;
+
+    if(NULL == target_record_field){
+        print_color("~~Target record_field must already be allocated before being passed to get_record_field!~", RED, BOLD, RESET);
+        return_value = ERROR_CODE_INVALID_INPUT;
+        goto cleanup;
+    }
+
+    old_offset = lseek(fd, 0, SEEK_CUR);
+    if(-1 == old_offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+
+    num_of_fields = get_fields(fd, &fields, false);
+    if(-1 == num_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_FIELDS;
+        goto cleanup;
+    }
+
+    record_len = get_len_of_record(fd, false);
+    if(-1 == record_len){
+        return_value = ERROR_CODE_COULDNT_GET_LEN_OF_RECORD;
+        goto cleanup;
+    }
+
+    target_record_field->record_num = record_number;
+    target_record_field->record_field_offset = 0;
+    target_record_field->field_index = field_num;
+    target_record_field->data_len = fields[field_num].data_len;
+    target_record_field->data = malloc(target_record_field->data_len);
+
+    for(i=0; i<field_num; i++){
+        target_record_field->record_field_offset += fields[i].data_len;
+    }
+
+    offset = magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_number*record_len + target_record_field->record_field_offset;
+    offset = lseek(fd, offset, SEEK_SET);
+    if(-1 == offset){
+        perror("GET_RECORD_FIELD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+    error_check = read(fd, target_record_field->data, target_record_field->data_len);
+    if(-1 == error_check){
+        perror("GET_RECORD_FIELD: Read error");
+        return_value = ERROR_CODE_COULDNT_READ;
+        goto cleanup;
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    if(NULL != fields)
+        free(fields);
+    return return_value;
+}
+
+/**
+ * @brief: Reads a record into the input record_field ** record (which is a pointer to the record)
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[OUT] record: A pointer to the record (which is an array of record_fields)
+ * @param[IN] record_number: The target index of the record that the caller wants
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
+ * @notes: A record is a collection of record_field structs (see dafaq.h for the struct)
+ */
+error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int number_of_fields = 0;
+    int number_of_records = 0;
+    int record_len = 0;
+    int record_field_offset = 0;
+    int error_check = 0;
+    int i = 0;
+    off_t offset = 0;
+    off_t old_offset = 0;
+    field * fields = NULL;
+
+    old_offset = lseek(fd, 0, SEEK_CUR);
+    if(-1 == old_offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+
+    number_of_fields = get_fields(fd, &fields, false);
+    if(-1 == number_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_FIELDS;
+        goto cleanup;
+    }
+
+    for(i=0; i<number_of_fields; i++){
+        record_len += fields[i].data_len;
+    }
+
+    number_of_records = get_num_of_records(fd, number_of_fields, false);
+    if(-1 == number_of_records){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
+        goto cleanup;
+    }
+
+    if(record_number > number_of_records){
+        print_color("~~RECORD NUMBER OUT OF BOUNDS~\n", RED, BOLD, RESET);
+        record_number = ERROR_CODE_INDEX_OUT_OF_BOUNDS;
+        goto cleanup;
+    }
+
+    *record = calloc(number_of_fields, sizeof(record_field));
+    if(NULL == *record){
+        perror("GET_RECORD: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+
+    for(i=0; i<number_of_fields; i++){
+        return_value = get_record_field(fd, &(*record)[i], record_number, i, false);
+        if(ERROR_CODE_SUCCESS != return_value){
+            goto cleanup;
+        }
+    }
+
+/*
+    offset = lseek(fd, record_number * record_len, SEEK_CUR);
+    if(-1 == offset){
+        perror("GET_RECORD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+    for(i=0; i<number_of_fields; i++){
+        (*record)[i].data = malloc(fields[i].data_len);
+        (*record)[i].data_len = fields[i].data_len;
+        (*record)[i].field_index = i;
+        (*record)[i].record_num = record_number;
+        (*record)[i].record_field_offset = record_field_offset;
+        if(NULL == (*record)[i].data){
+            perror("GET_RECORD: Malloc error");
+            return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+            goto cleanup;
+        }
+
+        error_check = read(fd, (*record)[i].data, fields[i].data_len);
+        if(-1 == error_check){
+            perror("GET_RECORD: Read error");
+            return_value = ERROR_CODE_COULDNT_READ;
+            goto cleanup;
+        }
+
+        record_field_offset += fields[i].data_len;
+    }
+*/
+
+    return_value = ERROR_CODE_SUCCESS;
+    
+cleanup:
+    if(ERROR_CODE_SUCCESS != return_value){
+        for(i=0; i<number_of_fields; i++){
+            if(NULL != (*record)[i].data)
+                free((*record)[i].data);
+        }
+        if(NULL != record)
+            free(record);
+    }
+
+    return return_value;
+}
+
+/**
+ * @brief: Reads all records in a table file into an array of records (records)
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[OUT] records: An array of records that the caller wants to fill out with the records stored 
+ *                      in the table file
+ * @param[IN] perserve_offset: If the function should preserve the offset of the file from before when
+ *                             the function was run.
+ * 
+ * @return: The number of records in the table file on success, else -1
+ * @notes: records is a pointer to an array of records, and records are arrays of record_fields, so
+ *         records is a pointer to an array of arrays of record_fields (record_field ***). Kind of
+ *         confusing, I know.
+ * 
+ */
+int get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset){
     int num_of_fields = 0;
     int num_of_records = -1;
-    int fd = 0;
-    int dump_fd = 0;
-    int record = 0;
-    int current_field = 0;
-    int int_data = 0;
-    int name_len = 0;
-    bool is_valid = false;
-    bool print_table = true;
-    char byte_data = 0;
-    char string_data[STRING] = {0};
-    char * print_text = NULL;
-    off_t offset = 0;
-    
-    fd = open(table_name, O_RDONLY);        //Open table
-    if(-1 == fd){
-        perror("Open error");
-        goto cleanup;
-    }
+    int i = 0;
+    error_code_t error_check = 0;
 
-    is_valid = check_magic(fd, false);      //Check if table has valid magic sequence
-    if(!is_valid){
-        goto cleanup;
-    }
-
-    num_of_fields = get_fields(fd, &fields, false);     //Get the table's fields
+    num_of_fields = get_num_of_fields(fd, false);
     if(-1 == num_of_fields){
         goto cleanup;
     }
 
-    num_of_records = get_num_of_records(fd, num_of_fields, false);      //Get the number of records
+    num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
         goto cleanup;
     }
 
-    print_text = malloc(strnlen(table_name, STRING_LEN)+12);        //Allocate memory for print_text
-    if(NULL == print_text){
-        perror("POOP: Malloc error");
+    *records = calloc(num_of_records, sizeof(record_field *));
+    if(NULL == *records){
+        perror("GET_ALL_RECORDS: Calloc error");
         num_of_records = -1;
         goto cleanup;
     }
 
-    if(NULL == dump_file){      //If user wants to print table to console
-        print_table = false;
-    }
-    else{
-        if(truncate){       
-            dump_fd = open(dump_file, O_WRONLY | O_TRUNC | O_CREAT, 0666);      //If the user wants to print table to markdown file and delete what was previosuly there
-        }
-        else{
-            dump_fd = open(dump_file, O_WRONLY | O_CREAT, 0666);        //Don't truncate previous data
-        }
-        if(-1 == dump_fd){
-            perror("POOP: Open error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-
-        if(!truncate){
-            offset = lseek(dump_fd, 0, SEEK_END);       //If the user doesn't want to truncate the markdown file, seek to the end as to not override the data
-            if(-1 == offset){
-                perror("POOP: Lseek error");
-                num_of_records = -1;
-                goto cleanup;
-            }
-        }
-    }
-
-    if(!print_table){
-        sprintf(print_text, "\n~`~%s:~\n\n", table_name);
-        print_color(print_text, BG_B_WHITE, FG,0,0,255, BOLD, RESET);       //Print the table name
-        for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the table's fields
-            rect_text(fields[current_field].name, (char **)&print_text, NAME_LEN);      //Rectangle-ify the table name
-            print_color("~`~", BG_RED, FG,0,0,0, BOLD);
-            printf("%s", print_text);       //Print the rectangle-ified table name
-            print_color("~ ", RESET);
-        }
-    }
-    else{
-        sprintf(print_text, "### **%s:**\n", table_name);       //Make a bold header (3) with the table name
-        name_len = strnlen(print_text, NAME_LEN+12);
-
-        error_check = write(dump_fd, print_text, name_len);     //Write it to the markdown file
-        if(-1 == error_check){
-            perror("POOP: Write error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-
-        name_len = 1;
-
-        //Print Field Names
-        for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the fields
-            name_len += strnlen(fields[current_field].name, NAME_LEN)+1;        //Increment name_len to reflect the new length of print_text
-
-            print_text = realloc(print_text, name_len);
-            if(NULL == print_text){
-                perror("POOP: Realloc error");
-                num_of_records = -1;
-                goto cleanup;
-            }
-            if(0 == current_field){
-                memset(print_text, 0, name_len);    /*  If this is the first iteration, set all of print_text to 0. (I had to do this, 
-                                                     *  not sure why it works I only have to do this the first time, or why at all) */
-            }
-
-            sprintf(print_text, "%s%s|", print_text, fields[current_field].name);       //Add the new field name and a | to print_text
-        }
-
-        name_len++;     //Increment name_len in order to make room for a newline character and null terminater
-        print_text = realloc(print_text, name_len);
-        if(NULL == print_text){
-            perror("POOP: Realloc error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-        sprintf(print_text, "%s\n", print_text);        //Add a newline character to print_text
-
-        error_check = write(dump_fd, print_text, name_len-1);     //Write print_text to the markdown file
-        if(-1 == error_check){
-            perror("POOP: Write error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-
-        //Print Field Name delimiter (eg. :-:|:-:|:-:|)
-        if(NULL != print_text){     //Reinitialize name_len and print_text
-            free(print_text);
-            print_text = NULL;
-        }
-        name_len = 4 * sizeof(char) * num_of_fields+2;
-        print_text = malloc(name_len);      //Allocate memory to print_text (each field requires 4 characters: :-:|), a newline, and a NUL byte
-        memset(print_text, 0, name_len);
-        
-        for(current_field=0; current_field<num_of_fields; current_field++){
-            sprintf(print_text, "%s:-:|", print_text);
-        }
-
-        sprintf(print_text, "%s\n", print_text);    //Add newline character to print_text
-
-        error_check = write(dump_fd, print_text, name_len-1);     //Write the Field name delimiter to the markdown file
-        if(-1 == error_check){
-            perror("POOP: Write error");
+    for(i=0; i<num_of_records; i++){
+        error_check = get_record(fd, &((*records)[i]), i, false);
+        if(ERROR_CODE_SUCCESS != error_check){
             num_of_records = -1;
             goto cleanup;
         }
     }
-
-    //Print records
-    for(record=0; record<num_of_records; record++){     //Iterate through every record
-        name_len = 1;
-
-        if(!print_table){
-            print_color("~\n", RESET);      //If not dumping table, print a newline and reset the color/emphasis
-        }
-        
-        for(current_field=0; current_field<num_of_fields; current_field++){
-            memset(string_data, 0, STRING_LEN);     //Reinitialize string_data
-
-            if(INT == fields[current_field].data_len){      //If datatype is int
-                error_check = read(fd, &int_data, sizeof(int_data));    //Read data into int_data
-                if(-1 == error_check){
-                    perror("Read error");
-                    num_of_records = -1;
-                    goto cleanup;
-                }
-
-                sprintf(string_data, "%i", int_data);       //Convert int_data into string and place it into string_data
-            }
-            else if(CHAR == fields[current_field].data_len){        //If data type is byte
-                error_check = read(fd, &byte_data, sizeof(byte_data));      //Read data into byte_data
-                if(-1 == error_check){
-                    perror("Read error");
-                    num_of_records = -1;
-                    goto cleanup;
-                }
-
-                sprintf(string_data, "%i", byte_data);      //Convert byte_data into string and place it into string_data
-            }
-            else if(STRING == fields[current_field].data_len){      //If data type is string
-                error_check = read(fd, string_data, STRING);    //Read directly into string_data
-                if(-1 == error_check){
-                    perror("Read error");
-                    num_of_records = -1;
-                    goto cleanup;
-                }
-            }
-            else{
-                print_color("~~INVALID DATA TYPE~\n", B_RED, BOLD, RESET);      //Invalid data type
-                num_of_records = -1;
-                goto cleanup;
-            }
-
-            if(!print_table){       //If not dumping table
-                rect_text(string_data, (char **)&print_text, NAME_LEN);     //Rectangle-ify string data and print
-                print_color("~~~", BG_BLACK, B_WHITE, BOLD);
-                printf("%s", print_text);
-                print_color("~ ", RESET);
-            }
-            else{       //If dumping table
-                name_len += strnlen(string_data, STRING_LEN)+1;    //Name len is length of string_data and 1
-                print_text = realloc(print_text, name_len); 
-                if(NULL == print_text){
-                    perror("POOP: Realloc error");
-                    num_of_records = -1;
-                    goto cleanup;
-                }
-                if(0 == current_field){
-                    memset(print_text, 0, name_len);
-                }
-
-                sprintf(print_text, "%s%s|", print_text, string_data);
-            }
-        }
-
-        if(print_table){
-            print_text[name_len-1] = '\n';
-
-            error_check = write(dump_fd, print_text, name_len);    //Write print_text to dump file
-            if(-1 == error_check){
-                perror("POOP: Write error");
-                num_of_records = -1;
-                goto cleanup;
-            }
-        }
-        
-    }
-    if(print_table){
-        error_check = write(dump_fd, "<br />\n\n", strlen("<br />\n\n"));
-        if(-1 == error_check){
-            perror("POOP: Write error");
-            num_of_records = -1;
-            goto cleanup;
-        }
-    }
-    else{
-        printf("\n");
-    }
-
 
 cleanup:
-    close(dump_fd);
-    if(fields)
-        free(fields);
-    if(print_text)
-        free(print_text);
-
+    if(-1 == num_of_records){
+        if(NULL != *records){
+            for(i=0; i<num_of_records; i++){
+                if(NULL != (*records)[i]){
+                    free((*records)[i]);
+                }
+            }
+            free(*records);
+        }
+    }    
     return num_of_records;
 }
 
 /**
- * @brief: Print/writes every table in a database directory
- * @param[IN] database_name: The name of the database directory
- * @param[IN] dump_name: The name of the markdown file to dump the tables into
+ * @brief: Partitions the array record_fields using Hoare's algorithm (thanks Wikipedia)
+ * @param[OUT] record_fields: The array of record_fields
+ * @param[IN] low: Lowest index
+ * @param[IN] high: Highest index
  * 
- * @return: On success the number of tables printed/written, else -1
- * @notes: This function iterates over the contents of the directory, checks if they are a valid, and
- *         if they are, it poops them.
+ * @return: The index of the new partition/pivot
+ * @notes: As stated earlier, this partition function uses Hoare's partition scheme (translated to C from Wikipedia). 
+ *         It works like so: you have two pointers (i and j) which start at the opposite ends of the array. They work
+ *         towards the pivot until they find a pair of elements that are in opposite places relative to each other 
+ *         (the one of the right is smaller than the pivot and the one on the left is larger than the pivot), then it
+ *         swaps the two elements. Basically, what it does is it iterates through one end of the array until it hits
+ *         an element that is out of place, then does the same on the other end. Once it finds these two elements, it
+ *         swaps them.
+ *         This is not included in the header file, as it should not be called by anything other than the function 
+ *         quicksort_record_fields.
  */
-int diarrhea(IN char * database_name, IN char * dump_name){
-    int num_of_tables = 0;
-    int error_check = 0;
-    int difference = 0;
-    bool is_valid = false;
-    bool truncate = true;
-    DIR * directory = NULL;
-    struct dirent * entry = NULL;
+int partition_record_fields(OUT record_field * record_fields, IN int low, IN int high){
+    int i = low-1;
+    int j = high+1;
+    int value = 0;
+    int pivot = 0;
+    record_field intermediary;
 
-    directory = opendir(database_name);
-    if(NULL == directory){
-        perror("DIARRHEA: Opendir error");
-        num_of_tables = -1;
+    pivot = *((int *)(record_fields[(high + low)/2].data));
+
+    while(true){
+        do{
+            i++;
+        }while(*((int *)(record_fields[i].data)) < pivot);
+
+        do{
+            j--;
+        }while(*((int *)(record_fields[j].data)) > pivot);
+
+        if(i >= j){
+            break;
+        }
+
+        intermediary = record_fields[j];
+        record_fields[j] = record_fields[i];
+        record_fields[i] = intermediary;
+    }
+
+    return j;
+}
+
+/**
+ * @brief: Given an array of record fields (meant to be all from different records) it sorts them by the 
+ *         value of their data and writes their indexes (sorted) to the file specified by sort_file_name.
+ * @param[IN] table_fd: The file descriptor of the table file
+ * @param[IN] sort_file_name: Name of the file to write the sorted indexes to
+ * @param[IN] field_index: The index of the field to sort
+ * 
+ * @returns: ERROR_CODE_SUCCESS on succes, else an indicative error of type error_code_t
+ * @notes: To sort, it uses the quicksort algorithm, but instead of being recursive, it is iterative to 
+ *         save memory.
+ */
+error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_index, bool truncate){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int error_check = 0;
+    int num_of_records = 0;
+    int num_of_fields = 0;
+    int sort_num_of_records = 0;
+    int sort_num_of_fields = 0;
+    int current_field_index = 0;
+    int i = 0;
+    int high = 0;
+    int low = 0;
+    int partition_index = 0;
+    int total_data_len = 0;
+    int sp = 0;     //Stack pointer
+    int * stack = NULL;
+    record_field * record_fields = NULL;
+
+    num_of_fields = get_num_of_fields(table_fd, false);
+    if(-1 == num_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_FIELDS;
         goto cleanup;
     }
-    while(true){
-        errno = 0;
-        entry = readdir(directory);
-        if(NULL == entry){
-            if(0 != errno){
-                perror("DIARHEA: Readdir error");
-                num_of_tables = -1;
-                goto cleanup;
-            }
-            else{
-                break;
-            }
-        }
 
-        difference = strncmp(".", entry->d_name, STRING_LEN);   //Check if current directory
-        if(0 == difference){
-            continue;
-        }
-        difference = strncmp("..", entry->d_name, STRING_LEN);      //Check if parent directory
-        if(0 == difference){
-            continue;
-        }
+    num_of_records = get_num_of_records(table_fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_FIELDS;
+        goto cleanup;
+    }
 
-        is_valid = check_extension(entry->d_name);      //Check if file is valid table file (extension-wise)
-        if(!is_valid){
-            continue;
-        }
+    error_check = lseek(sort_file_fd, 0, SEEK_SET);
+    if(-1 == error_check){
+        perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
 
-        error_check = poop(entry->d_name, dump_name, truncate);
-        if(truncate){
-            truncate = false;
-        }
-        if(-1 == error_check && 0 != errno){
-            num_of_tables = -1;
+    error_check = read(sort_file_fd, &sort_num_of_records, sizeof(num_of_fields));
+    if(-1 == error_check){
+        perror("QUICKSORT_RECORD_FIELDS: Read error");
+        return_value = ERROR_CODE_COULDNT_READ;
+        goto cleanup;
+    }
+    
+    if(0 == sort_num_of_records){
+        error_check = lseek(sort_file_fd, 0, SEEK_SET);
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+            return_value = ERROR_CODE_COULDNT_LSEEK;
             goto cleanup;
         }
 
-        num_of_tables++;
+        sort_num_of_records = num_of_records;
+        error_check = write(sort_file_fd, &sort_num_of_records, sizeof(num_of_fields));
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Write error");
+            return_value = ERROR_CODE_COULDNT_READ;
+            goto cleanup;
+        }
     }
-
-cleanup:
-    if(NULL != directory){
-        free(directory);
-    }
-    return num_of_tables;
-}
-
-int execute_query(query input_query){
-    int i = 0;
-    int j = 0;
-    int num_of_fields = 0;
-    int fds[MAX_CALLS] = {0};
-    int * get_fields_indexes[MAX_CALLS] = {0};
-    field * fields = NULL;
-
-    if(FROM != input_query.queryers[0] || GET != input_query.queryers[1]){
-        print_color("~~ERROR: INVALID QUERY FORMAT~\n", B_RED, BOLD, RESET);
+    if(sort_num_of_records != num_of_records){
+        print_color("~~SORT FILE NOT UP TO DATE~\n", RED, BOLD, RESET);
+        return_value = ERROR_CODE_INVALID_INPUT;
         goto cleanup;
     }
 
-    for(i=0; i<MAX_CALLS; i++){
-        if(0 != input_query.tables[i][0]){      //Check that the table file path is initialized
-            fds[i] = open(input_query.tables[i], O_RDONLY);     //Open table file
-            if(-1 == fds[i]){
-                perror("EXECUTE_QUERY: Open error");
+    record_fields = calloc(num_of_records, sizeof(record_field));
+    if(NULL == record_fields){
+        perror("QUICKSORT_RECORD_FIELDS: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_records; i++){
+        error_check = get_record_field(table_fd, &record_fields[i], i, field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            return_value = ERROR_CODE_COULDNT_GET_RECORD;
+            goto cleanup;
+        }
+    }
+
+    //Iterative Quicksort. Definitley not copied from GeeksForGeeks
+    high = num_of_records - 1;
+    low = 0;
+    stack = calloc(high - low + 1, sizeof(int));
+    if(NULL == stack){
+        perror("QUICKSORT_RECORD_FIELDS: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+
+    //Pushing low and high onto the stack
+    stack[sp] = low;
+    sp++;
+    stack[sp] = high;
+    
+    while(sp >= 0){
+        //Popping high and low off of the stack
+        high = stack[sp];
+        sp--;
+        low = stack[sp];
+        sp--;
+
+        partition_index = partition_record_fields(record_fields, low, high);
+
+        //If the pivot is not at the lowest index, push the new high and low onto the stack.
+        if(partition_index > low){
+           sp++;
+           stack[sp] = low;
+           sp++;
+           stack[sp] = partition_index;
+        }
+
+        //If the pivot is not at the highest index, push the new high and low onto the stack.
+        if(partition_index < high){
+            sp++;
+            stack[sp] = partition_index + 1;
+            sp++;
+            stack[sp] = high;
+        }
+    }
+
+    error_check = read(sort_file_fd, &sort_num_of_fields, sizeof(sort_num_of_fields));
+    if(-1 == error_check){
+        perror("QUICKSORT_RECORD_FIELDS: Read error");
+        return_value = ERROR_CODE_COULDNT_READ;
+        goto cleanup;
+    }
+
+    for(i=0; i<sort_num_of_records && sort_num_of_fields != 0; i++){
+        error_check = read(sort_file_fd, &current_field_index, sizeof(current_field_index));
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Read error");
+            return_value = ERROR_CODE_COULDNT_READ;
+            goto cleanup;
+        }
+
+        if(current_field_index == field_index){
+            i = -1;
+            error_check = lseek(sort_file_fd, -1 * sizeof(current_field_index), SEEK_CUR);
+            if(-1 == error_check){
+                perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+                return_value = ERROR_CODE_COULDNT_LSEEK;
+                goto cleanup;
+            }
+            break;
+        }
+
+        error_check = lseek(sort_file_fd, sort_num_of_records * sizeof(int), SEEK_CUR);
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+            return_value = ERROR_CODE_COULDNT_LSEEK;
+            goto cleanup;
+        }
+
+    }
+    
+    if(i != -1){
+        sort_num_of_fields++;
+        error_check = lseek(sort_file_fd, sizeof(sort_num_of_records), SEEK_SET);
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+            return_value = ERROR_CODE_COULDNT_LSEEK;
+            goto cleanup;
+        }
+        
+        error_check = write(sort_file_fd, &sort_num_of_fields, sizeof(sort_num_of_fields));
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+            return_value = ERROR_CODE_COULDNT_LSEEK;
+            goto cleanup;
+        }
+
+        error_check = lseek(sort_file_fd, 0, SEEK_END);
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Lseek error");
+            return_value = ERROR_CODE_COULDNT_LSEEK;
+            goto cleanup;
+        }
+    }
+
+    error_check = write(sort_file_fd, &field_index, sizeof(field_index));
+    if(-1 == error_check){
+        perror("QUICKSORT_RECORD_FIELDS: Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_records; i++){
+        error_check = write(sort_file_fd, &(record_fields[i].record_num), sizeof(record_fields[i].record_num));
+        if(-1 == error_check){
+            perror("QUICKSORT_RECORD_FIELDS: Write error");
+            return_value = ERROR_CODE_COULDNT_WRITE;
+            goto cleanup;
+        }
+    }
+    
+cleanup:
+    return return_value;
+}
+
+/**
+ * @brief: Finds records that have the target data
+ * @param[IN]
+ * 
+ */
+error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, int field_index, bool ** valid_record_indexes){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int first_matching_index = 0;
+    int current_index = 0;
+    int table_num_of_fields = 0;
+    int num_of_fields = 0;
+    int error_check = 0;
+    int num_of_records = 0;
+    int current_field_index = -1;
+    int i = 0;
+    int high = 0;
+    int low = 0;
+    int difference = 0;
+    record_field field = {0};
+    int * record_nums = NULL;
+
+    table_num_of_fields = get_num_of_fields(table_fd, false);
+    if(-1 == num_of_fields){
+        goto cleanup;
+    }
+
+    error_check = lseek(sort_fd, 0, SEEK_SET);
+    if(-1 == error_check){
+        perror("BINARY_SEARCH_SORT_FILE: Lseek error");
+        goto cleanup;
+    }
+
+    error_check = read(sort_fd, &num_of_records, sizeof(num_of_records));
+    if(-1 == error_check){
+        perror("BINARY_SEARCH_SORT_FILE: Read error");
+        goto cleanup;
+    }
+
+    error_check = read(sort_fd, &num_of_fields, sizeof(num_of_fields));
+    if(-1 == error_check){
+        perror("BINARY_SEARCH_SORT_FILE: Read error");
+        goto cleanup;
+    }
+
+    error_check = get_num_of_records(table_fd, table_num_of_fields, false);
+    if(-1 == error_check){
+        goto cleanup;
+    }
+
+    if(error_check != num_of_records){
+        print_color("~~SORT FILE IS NOT UP TO DATE, TRUNCATING~\n", RED, BOLD, RESET);
+        return_value = ERROR_CODE_INVALID_INPUT;
+        //error_check = ftruncate(sort_fd, 0);
+        if(-1 == error_check){
+            perror("BINARY_SEARCH_SORT_FILE: Truncate error");
+            return_value = ERROR_CODE_COULDNT_TRUNCATE;
+        }
+        goto cleanup;
+    }
+
+    for(i=0; current_field_index != field_index; i++){
+        if(i > num_of_fields){
+            return_value = ERROR_CODE_INVALID_INPUT;
+            goto cleanup;
+        }
+        error_check = read(sort_fd, &current_field_index, sizeof(current_field_index));
+        if(-1 == error_check){
+            perror("BINARY_SEARCH_SORT_FILE: Read error");
+            goto cleanup;
+        }
+
+        if(current_field_index != field_index){
+            error_check = lseek(sort_fd, num_of_records * sizeof(int), SEEK_CUR);
+            if(-1 == error_check){
+                perror("BINARY_SEARCH_SORT_FILE: Lseek error");
                 goto cleanup;
             }
         }
     }
 
+    record_nums = calloc(num_of_records, sizeof(int));
+    if(NULL == record_nums){
+        perror("BINARY_SEARCH_SORT_FILE: Calloc error");
+        goto cleanup;
+    }
+
+    error_check = read(sort_fd, record_nums, num_of_records * sizeof(int));
+    if(-1 == error_check){
+        perror("BINARY_SEARCH_SORT_FILE: Read error");
+        goto cleanup;
+    }
+
+    high = num_of_records - 1;
+    low = 0;
+    
+    while(high >= low){     //The actual binary search
+        current_index = (high+low)/2;
+
+        error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+        if(*((int *)target_data) == *((int *)field.data)){
+            high = -1;
+            break;
+        }
+        if(*((int *)target_data) > *((int *)field.data)){
+            low = current_index + 1;
+        }
+        else{
+            high = current_index - 1;
+        }
+    }       /** 
+             * This search may not give us the first time the value exists in the array. In fact, it may give us 
+             * the wrong value altogether! (Due to how I checked if it was right), so we need another method to
+             * get to the first value. Then we can iterate forwards through the array and get every record_field
+             * that matches
+             */
+    if(-1 != high){
+        return_value = ERROR_CODE_INVALID_INPUT;
+        print_color("~~ELEMENT DOES NOT EXIST IN FIELD~\n", RED, BOLD, RESET);
+        goto cleanup;
+    }
+    
+    while(*((int *)target_data) == *((int *)field.data)){
+        current_index--;
+        if(current_index <= 0){
+            break;
+        }
+
+        return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+        if(ERROR_CODE_SUCCESS != return_value){
+            goto cleanup;
+        }
+    }
+
+    current_index++;
+    return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+
+    *valid_record_indexes = calloc(num_of_records, sizeof(bool));    //This will hold all of the 
+    if(NULL == *valid_record_indexes){
+        perror("BINARY_SEARCH_SORT_FILE: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+    memset(*valid_record_indexes, false, num_of_records);
+
+    while(*((int *)target_data) == *((int *)field.data)){
+        difference = strncmp(field.data, target_data, field.data_len);
+        if(0 == difference){
+            (*valid_record_indexes)[field.record_num] = true;
+        }
+
+        if(current_index >= num_of_fields){
+            break;
+        }
+        current_index++;
+
+        error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
 cleanup:
-    return 0;
+    return return_value;
 }

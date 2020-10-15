@@ -1,0 +1,5 @@
+Quicksort utilizes a partition function to make it so that all elements on the left of the partition are smaller than the partition, and all elements on the right are larger.
+Given an array, quicksort utilizes three pointers: i, j, and partition_index (pi)
+i starts at -1, and j starts at 0. pi starts at some index (last index)
+The program runs through a loop where if the element at index j is smaller than the partition (array[j] < array[pi]) it increments i and swaps the elements at indexes i and j. So, i always points at first to some number greater or equal to the partition (or to the same number at the same indexas j), since the larger numbers would've been ignored by j, and then if j finds some smaller number, it swaps it with i and i equals some number less than the partition (or j and i )
+When j finds a number larger than the partition, it skips it, leaving a gap for i. 

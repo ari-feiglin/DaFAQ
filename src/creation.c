@@ -62,6 +62,9 @@ error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field *
     int fd = -1;
     int error_check = 0;
     int num_of_records = 0;
+    int sort_fd = 0;
+    int zero = 0;
+    char * sort_file_name = NULL;
 
     remove(table_name);
 
@@ -100,7 +103,37 @@ error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field *
         goto cleanup;
     }
 
+    sort_file_name = malloc(strnlen(table_name, STRING_LEN) + extension_len + 1);
+    sprintf(sort_file_name, "%s.srt", table_name);
+
+    sort_fd = creat(sort_file_name, 0666);
+    if(-1 == sort_fd){
+        perror("CREATE_TABLE: Open error");
+        return_value = ERROR_CODE_COULDNT_OPEN;
+        goto cleanup;
+    }
+
+    error_check = write(sort_fd, &zero, sizeof(zero));      //Write number of fields written to the sort file (0)
+    if(-1 == error_check){
+        perror("Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    error_check = write(sort_fd, &zero, sizeof(zero));      ////Write number of records in the table (0)
+    if(-1 == error_check){
+        perror("Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
     return_value = ERROR_CODE_SUCCESS;
+
 cleanup:
+    if(-1 != sort_fd)
+        close(sort_fd);
+    if(NULL != sort_file_name){
+        free(sort_file_name);
+    }
     return return_value;
 }

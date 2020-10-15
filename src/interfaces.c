@@ -146,6 +146,7 @@ int switch_record_interface(IN char * table_name, int record_num){
     int num_of_records = -1;
     int error_check = 0;
     int fd = -1;
+    int sort_fd = 0;
     int i = 0;
     int int_input = 0;
     int byte_input = 0;
@@ -155,6 +156,7 @@ int switch_record_interface(IN char * table_name, int record_num){
     int * input_lens = NULL;
     char * input = NULL;
     char ** field_inputs = NULL;
+    char * sort_file_name = NULL;
 
     fd = open(table_name, O_RDWR);
     if(-1 == fd){
@@ -256,7 +258,12 @@ int switch_record_interface(IN char * table_name, int record_num){
         }
     }
 
-    num_of_records = switch_record(fd, record_num, input_lens, field_inputs);
+    sort_file_name = malloc(strnlen(table_name, STRING_LEN) + extension_len + 1);
+    sprintf(sort_file_name, "%s.srt", table_name);
+
+    sort_fd = open(sort_file_name, O_RDWR);
+
+    num_of_records = switch_record(fd, record_num, input_lens, field_inputs, sort_fd);
     if(-1 == num_of_records){
         goto cleanup;
     }
@@ -277,7 +284,12 @@ cleanup:
         free(fields);
     if(NULL != input)
         free(input);
-    close(fd);
+    if(NULL != sort_file_name)
+        free(sort_file_name);
+    if(-1 != fd)
+        close(fd);
+    if(-1 != sort_fd)
+        close(sort_fd);
 
     return num_of_records;
 }
