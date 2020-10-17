@@ -146,36 +146,6 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
         }
     }
 
-/*
-    offset = lseek(fd, record_number * record_len, SEEK_CUR);
-    if(-1 == offset){
-        perror("GET_RECORD: Lseek error");
-        return_value = ERROR_CODE_COULDNT_LSEEK;
-        goto cleanup;
-    }
-    for(i=0; i<number_of_fields; i++){
-        (*record)[i].data = malloc(fields[i].data_len);
-        (*record)[i].data_len = fields[i].data_len;
-        (*record)[i].field_index = i;
-        (*record)[i].record_num = record_number;
-        (*record)[i].record_field_offset = record_field_offset;
-        if(NULL == (*record)[i].data){
-            perror("GET_RECORD: Malloc error");
-            return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
-            goto cleanup;
-        }
-
-        error_check = read(fd, (*record)[i].data, fields[i].data_len);
-        if(-1 == error_check){
-            perror("GET_RECORD: Read error");
-            return_value = ERROR_CODE_COULDNT_READ;
-            goto cleanup;
-        }
-
-        record_field_offset += fields[i].data_len;
-    }
-*/
-
     return_value = ERROR_CODE_SUCCESS;
     
 cleanup:
@@ -187,6 +157,8 @@ cleanup:
         if(NULL != record)
             free(record);
     }
+    if(NULL != fields)
+        free(fields);
 
     return return_value;
 }
@@ -301,14 +273,15 @@ int partition_record_fields(OUT record_field * record_fields, IN int low, IN int
  * @brief: Given an array of record fields (meant to be all from different records) it sorts them by the 
  *         value of their data and writes their indexes (sorted) to the file specified by sort_file_name.
  * @param[IN] table_fd: The file descriptor of the table file
- * @param[IN] sort_file_name: Name of the file to write the sorted indexes to
+ * @param[IN] sort_file_fd: The file descriptor of the file to write the sorted indexes to
  * @param[IN] field_index: The index of the field to sort
+ * @param[IN] truncate: If the function should truncate files that aren't up to date (Redundant)
  * 
  * @returns: ERROR_CODE_SUCCESS on succes, else an indicative error of type error_code_t
  * @notes: To sort, it uses the quicksort algorithm, but instead of being recursive, it is iterative to 
  *         save memory.
  */
-error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_index, bool truncate){
+error_code_t quicksort_record_fields(IN int table_fd, int sort_file_fd, int field_index, bool truncate){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int error_check = 0;
     int num_of_records = 0;
@@ -344,7 +317,7 @@ error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_i
         goto cleanup;
     }
 
-    error_check = read(sort_file_fd, &sort_num_of_records, sizeof(num_of_fields));
+    error_check = read(sort_file_fd, &sort_num_of_records, sizeof(sort_num_of_fields));
     if(-1 == error_check){
         perror("QUICKSORT_RECORD_FIELDS: Read error");
         return_value = ERROR_CODE_COULDNT_READ;
@@ -360,7 +333,7 @@ error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_i
         }
 
         sort_num_of_records = num_of_records;
-        error_check = write(sort_file_fd, &sort_num_of_records, sizeof(num_of_fields));
+        error_check = write(sort_file_fd, &sort_num_of_records, sizeof(sort_num_of_fields));
         if(-1 == error_check){
             perror("QUICKSORT_RECORD_FIELDS: Write error");
             return_value = ERROR_CODE_COULDNT_READ;
@@ -472,7 +445,7 @@ error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_i
             return_value = ERROR_CODE_COULDNT_LSEEK;
             goto cleanup;
         }
-        
+
         error_check = write(sort_file_fd, &sort_num_of_fields, sizeof(sort_num_of_fields));
         if(-1 == error_check){
             perror("QUICKSORT_RECORD_FIELDS: Lseek error");
@@ -503,17 +476,42 @@ error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_i
             goto cleanup;
         }
     }
+
+    return_value = ERROR_CODE_SUCCESS;
     
 cleanup:
+    if(NULL != stack)
+        free(stack);
+    for(i=0; i<num_of_records; i++){
+        if(NULL != record_fields[i].data)
+            free(record_fields[i].data);
+    }
+    if(NULL != record_fields)
+        free(record_fields);
     return return_value;
 }
 
 /**
- * @brief: Finds records that have the target data
- * @param[IN]
+ * @brief: Finds records that have the target data relative to the operation
+ * @param[IN] table_fd: The file descriptor of the table file
+ * @param[IN] sort_fd: The file descriptor of the sort file
+ * @param[IN] target_data: The data that the caller wants to locate
+ * @param[IN] operator: The inequality operation to perform in order to locate valid records
+ * @param[IN] field_index: The idex of the field in which to find corresponding records
+ * @param[OUT] valid_record_indexes: An array to hold a mapping of which records are valid
  * 
+ * @returns: ERROR_CODE_SUCCESS on success, else an indicative error code of type error_code_t
+ * @notes: The valid operations are defined as follows:
+ *              + == - equal to
+ *              + != - not equal to
+ *              + >= - greater than or equal to
+ *              + <= - less than or equal to
+ *              + > - greater than
+ *               + < - less than
+ *         These are relative to the data in the record's field, then the target (so data < target, not
+ *         target < data)
  */
-error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, int field_index, bool ** valid_record_indexes){
+error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, operators operator, int field_index, bool ** valid_record_indexes){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int first_matching_index = 0;
     int current_index = 0;
@@ -525,6 +523,8 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     int i = 0;
     int high = 0;
     int low = 0;
+    int high_data = 0;
+    int low_data = 0;
     int difference = 0;
     record_field field = {0};
     int * record_nums = NULL;
@@ -558,19 +558,13 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     }
 
     if(error_check != num_of_records){
-        print_color("~~SORT FILE IS NOT UP TO DATE, TRUNCATING~\n", RED, BOLD, RESET);
-        return_value = ERROR_CODE_INVALID_INPUT;
-        //error_check = ftruncate(sort_fd, 0);
-        if(-1 == error_check){
-            perror("BINARY_SEARCH_SORT_FILE: Truncate error");
-            return_value = ERROR_CODE_COULDNT_TRUNCATE;
-        }
+        return_value = ERROR_CODE_OUT_OF_DATE;
         goto cleanup;
     }
 
     for(i=0; current_field_index != field_index; i++){
         if(i > num_of_fields){
-            return_value = ERROR_CODE_INVALID_INPUT;
+            return_value = ERROR_CODE_FIELD_DOESNT_EXIST;
             goto cleanup;
         }
         error_check = read(sort_fd, &current_field_index, sizeof(current_field_index));
@@ -602,14 +596,47 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
 
     high = num_of_records - 1;
     low = 0;
+    current_index = 0;
+
+    //If target data does not exist, and is less than the smallest element...
+    if(NULL != field.data){
+        free(field.data);
+    }
+    error_check = get_record_field(table_fd, &field, record_nums[low], field_index, false);
+    if(ERROR_CODE_SUCCESS != error_check){
+        goto cleanup;
+    }
+    if(*((int *)target_data) < *((int *)field.data)){
+        current_index = low-1;
+        low = high + 1;
+        high = -1;
+    }
+
+    //...or larger than the biggest element
+    if(NULL != field.data){
+        free(field.data);
+    }
+    error_check = get_record_field(table_fd, &field, record_nums[high], field_index, false);
+    if(ERROR_CODE_SUCCESS != error_check){
+        goto cleanup;
+    }
+    if(*((int *)target_data) > *((int *)field.data)){
+        current_index = high+1;
+        low = high + 1;
+        high = -1;
+    }
     
     while(high >= low){     //The actual binary search
         current_index = (high+low)/2;
 
+        if(NULL != field.data){
+            free(field.data);
+        }
         error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
         if(ERROR_CODE_SUCCESS != error_check){
             goto cleanup;
         }
+
         if(*((int *)target_data) == *((int *)field.data)){
             high = -1;
             break;
@@ -624,20 +651,54 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
              * This search may not give us the first time the value exists in the array. In fact, it may give us 
              * the wrong value altogether! (Due to how I checked if it was right), so we need another method to
              * get to the first value. Then we can iterate forwards through the array and get every record_field
-             * that matches
+             * that matches.
+             * 
+             * NOTE: After this, low = high + 1
              */
+    //If element did not exist in list.
     if(-1 != high){
-        return_value = ERROR_CODE_INVALID_INPUT;
-        print_color("~~ELEMENT DOES NOT EXIST IN FIELD~\n", RED, BOLD, RESET);
+        if(NULL != field.data){
+            free(field.data);
+        }
+        error_check = get_record_field(table_fd, &field, record_nums[high], field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+        high_data = *((int *)field.data);
+
+        if(NULL != field.data){
+            free(field.data);
+        }
+        error_check = get_record_field(table_fd, &field, record_nums[low], field_index, false);
+        if(ERROR_CODE_SUCCESS != error_check){
+            goto cleanup;
+        }
+        low_data = *((int *)field.data);
+
+        if(low_data - *((int *)target_data) > *((int *)target_data) - high_data){
+            current_index = high;
+        }
+        else{
+            current_index = low;
+        }
+    }
+    if(NULL != field.data){
+        free(field.data);
+    }
+    error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+    if(ERROR_CODE_SUCCESS != error_check){
         goto cleanup;
     }
     
-    while(*((int *)target_data) == *((int *)field.data)){
+    while(*((int *)target_data) == *((int *)field.data)){       //This is a loop to get to the first instance of the target data
         current_index--;
         if(current_index <= 0){
             break;
         }
 
+        if(NULL != field.data){
+            free(field.data);
+        }
         return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
         if(ERROR_CODE_SUCCESS != return_value){
             goto cleanup;
@@ -645,35 +706,101 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     }
 
     current_index++;
+    if(NULL != field.data){
+        free(field.data);
+    }
+    return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+    if(ERROR_CODE_SUCCESS != return_value){
+        goto cleanup;
+    }
+    if(*((int *)target_data) != *((int *)field.data)){
+        current_index--;
+    }
+    first_matching_index = current_index;
+
+    if(NULL != field.data){
+        free(field.data);
+    }
     return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
 
-    *valid_record_indexes = calloc(num_of_records, sizeof(bool));    //This will hold all of the 
+    *valid_record_indexes = calloc(num_of_records, sizeof(bool));    //The byte map for the valid records
     if(NULL == *valid_record_indexes){
         perror("BINARY_SEARCH_SORT_FILE: Calloc error");
         return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
         goto cleanup;
     }
-    memset(*valid_record_indexes, false, num_of_records);
+    if(NOT_EQUALS == operator){
+        memset(*valid_record_indexes, true, num_of_records);
+    }
+    else{
+        memset(*valid_record_indexes, false, num_of_records);
+    }
 
     while(*((int *)target_data) == *((int *)field.data)){
         difference = strncmp(field.data, target_data, field.data_len);
         if(0 == difference){
+            if(NOT_EQUALS == operator){
+                (*valid_record_indexes)[field.record_num] = false;
+            }
+            else if(EQUALS == operator){
+                (*valid_record_indexes)[field.record_num] = true;
+            }
+        }
+
+        if(GREATER_OR_EQUALS == operator || LESS_OR_EQUALS == operator){
             (*valid_record_indexes)[field.record_num] = true;
         }
 
-        if(current_index >= num_of_fields){
+        if(current_index >= num_of_records-1){
             break;
         }
         current_index++;
 
+        if(NULL != field.data){
+            free(field.data);
+        }
         error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
         if(ERROR_CODE_SUCCESS != error_check){
             goto cleanup;
         }
     }
 
+    if(GREATER_OR_EQUALS == operator || GREATER == operator){
+        for(current_index; current_index<num_of_records; current_index++){
+            if(NULL != field.data){
+                free(field.data);
+            }
+            error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+            if(ERROR_CODE_SUCCESS != error_check){
+                goto cleanup;
+            }
+            if(*((int *)field.data) > *((int *)target_data)){
+                (*valid_record_indexes)[field.record_num] = true;
+            }
+        }
+    }
+    else if(LESS_OR_EQUALS == operator || LESS == operator){
+        for(current_index; current_index>=0; current_index--){
+            if(NULL != field.data){
+                free(field.data);
+            }
+            error_check = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+            if(ERROR_CODE_SUCCESS != error_check){
+                goto cleanup;
+            }
+            if(*((int *)field.data) < *((int *)target_data)){
+                (*valid_record_indexes)[field.record_num] = true;
+            }
+        }
+    }
+
     return_value = ERROR_CODE_SUCCESS;
 
 cleanup:
+    if(NULL != field.data)
+        free(field.data);
+
+    if(NULL != record_nums)
+        free(record_nums);
     return return_value;
 }

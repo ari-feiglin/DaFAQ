@@ -38,11 +38,14 @@ typedef enum error_code_e{
     ERROR_CODE_COULDNT_GET_INPUT,
     ERROR_CODE_INVALID_DATATYPE,
     ERROR_CODE_INDEX_OUT_OF_BOUNDS,
-    ERROR_CODE_INVALID_FILE
+    ERROR_CODE_INVALID_FILE,
+    ERROR_CODE_FIELD_DOESNT_EXIST,
+    ERROR_CODE_OUT_OF_DATE
 } error_code_t;
 
 typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
 typedef enum token {FIELD_TABLE, DaFAQ, DIGEST, CONSTIPATE, POOP, DIARRHEA, FROM, GET, MERGE, AT, WHERE, AVERAGE, SUM, AMOUNT}tokens, calls, queryers, functions;
+typedef enum operators {EQUALS=0, NOT_EQUALS, GREATER, LESS, GREATER_OR_EQUALS, LESS_OR_EQUALS}operators;
 
 typedef struct query{
     queryers queryers[NUM_OF_QUERYERS];
@@ -67,11 +70,13 @@ typedef struct record_field{
     char * data;
 }record_field;
 
-char * magic;
-char * extension;
-char * sort_extension;
-int magic_len;
-int extension_len;
+extern char * operations[];
+extern char * magic;
+extern char * extension;
+extern char * sort_extension;
+extern int magic_len;
+extern int extension_len;
+extern int num_of_operations;
 
 //Creation
 int create_database(char * name);
@@ -96,7 +101,7 @@ error_code_t get_record_field(IN int fd, OUT record_field * target_record_field,
 error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset);
 error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
 error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_index, bool truncate);
-error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, int field_index, bool ** valid_record_indexes);
+error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, operators operation, int field_index, bool ** valid_record_indexes);
 
 //Pooping
 int poop(char * table_name, char * dump_file, bool truncate);
@@ -106,5 +111,6 @@ int diarrhea(char * database_name, char * dump_name);
 int create_table_interface(char * table_name);
 int switch_record_interface(char * name, int record_num);
 error_code_t switch_field_interface(IN char * table_name);
+error_code_t query_interface(char * table_name, char * sort_file_name);
 
 #endif

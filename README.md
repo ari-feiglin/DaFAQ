@@ -7,14 +7,16 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.2.0**</ins>
-<ins>**v0.2.0 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.2.0 (v0.2.0) was released October 09, 2020
+## <ins>**Version 0.3.0**</ins>
+<ins>**v0.3 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
+Version 0.3.0 (v0.3.0) was released October 18, 2020
 
-### <ins>**v0.2.0 CHANGES:**</ins>
-A list of features added in version 0.2.0
-* Even more bugfixes... (Like, a lot)
+### <ins>**v0.3.0 CHANGES:**</ins>
+A list of features added in version 0.3.0
+* Even more bugfixes... (Like, a lot. Not to mention the dozens of bugs I made when adding the querying feature. Most of these were due to poor planning)
 * Added sort files. These are files that have the sorted indexes of records based off of their fields
+* Added simple queries! These allow you to filter data in a table! See details/Usage for my details.
+* Documented every function
 
 ### <ins>**USAGE:** </ins>
 
@@ -26,17 +28,27 @@ A list of features added in version 0.2.0
 
 **Table Navigation Functions:**
 * **get_num_of_fields** - returns the number of fields in a table (mostly used by get_fields)
+* **get_len_of_record** - returns the length of a record (the sum of all of the field's data lengths)
 * **get_fields** - returns the number of fields in a table and writes them into a buffer of type `field * fields`.
 * **get_num_of_records** - returns the number of records in a table.
 * **check_extension** - checks if table file has a valid extension (.dfq)
 
-**INTERFACES:**
+**Interfaces:**
 * **create_table_interface** - the interactive text interface for create_table.
-* **edit_record_interface** - the interactive text interface for switch_record.
+* **switch_record_interface** - the interactive text interface for switch_record.
+* **switch_field_interface** - the interactive text interface for switch_field.
+* **query_interface** - an interactive text interface for executing queries. It also handles non-up-to-date sort files.
 
 **Database Review Functions:**
 * **poop** - prints every record in a table. If one is specified, print the output to a markdown file. (In order to not dump a table, dump_file should be NULL)
 * **diahrrea** - poops every table in a database.
+
+**Queries:**
+* **get_record_field** - Gets the data from a field in a specified record. This data, and other meadata is stored in a struct of type `struct record_field`
+* **get_record** - Gets a record and stores it as an array of record_fields.
+* **get_all_records** - Gets very record in a table, and stores it as an array of arrays of record_fields (a record is an array of record_fields, hence an array of records is an array of arrays of record_fields)
+* **quicksort_record_fields** - Sorts an input field of a table, and stores the sorted list in a sort file.
+* **binary_search_sort_file** - Executes a query and returns a map of valid records.
 
 **Other Functions:**
 * **check_magic** - checks if a file has the proper magic sequence in order to be a valid DaFAQ file.
@@ -63,7 +75,7 @@ Here are some of my ideas for the future:
 * Fully comment the project
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.1.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.3.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 

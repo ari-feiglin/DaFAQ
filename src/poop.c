@@ -15,14 +15,14 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     int error_check = 0;
     int num_of_fields = 0;
     int num_of_records = -1;
-    int fd = 0;
-    int dump_fd = 0;
+    int fd = -1;
+    int dump_fd = -1;
     int record = 0;
     int current_field = 0;
     int int_data = 0;
     int name_len = 0;
     bool is_valid = false;
-    bool print_table = true;
+    bool should_dump = true;
     char byte_data = 0;
     char string_data[STRING] = {0};
     char * print_text = NULL;
@@ -57,7 +57,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     }
 
     if(NULL == dump_file){      //If user wants to print table to console
-        print_table = false;
+        should_dump = false;
     }
     else{
         if(truncate){       
@@ -82,7 +82,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
         }
     }
 
-    if(!print_table){
+    if(!should_dump){
         sprintf(print_text, "\n~`~%s:~\n\n", table_name);
         print_color(print_text, BG_B_WHITE, FG,0,0,255, BOLD, RESET);       //Print the table name
         for(current_field=0; current_field<num_of_fields; current_field++){     //Iterate over the table's fields
@@ -95,7 +95,6 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     else{
         sprintf(print_text, "### **%s:**\n", table_name);       //Make a bold header (3) with the table name
         name_len = strnlen(print_text, NAME_LEN+12);
-
         error_check = write(dump_fd, print_text, name_len);     //Write it to the markdown file
         if(-1 == error_check){
             perror("POOP: Write error");
@@ -166,7 +165,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     for(record=0; record<num_of_records; record++){     //Iterate through every record
         name_len = 1;
 
-        if(!print_table){
+        if(!should_dump){
             print_color("~\n", RESET);      //If not dumping table, print a newline and reset the color/emphasis
         }
         
@@ -207,7 +206,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
                 goto cleanup;
             }
 
-            if(!print_table){       //If not dumping table
+            if(!should_dump){       //If not dumping table
                 rect_text(string_data, (char **)&print_text, NAME_LEN);     //Rectangle-ify string data and print
                 print_color("~~~", BG_BLACK, B_WHITE, BOLD);
                 printf("%s", print_text);
@@ -229,7 +228,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
             }
         }
 
-        if(print_table){
+        if(should_dump){
             print_text[name_len-1] = '\n';
 
             error_check = write(dump_fd, print_text, name_len);    //Write print_text to dump file
@@ -241,7 +240,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
         }
         
     }
-    if(print_table){
+    if(should_dump){
         error_check = write(dump_fd, "<br />\n\n", strlen("<br />\n\n"));
         if(-1 == error_check){
             perror("POOP: Write error");

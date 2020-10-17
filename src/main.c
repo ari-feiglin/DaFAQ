@@ -1,9 +1,15 @@
 #include "dafaq.h"
 
+char * magic = "DaFAQ";
+char * extension = ".dfq";
+char * operations[] = {"==", "!=", ">", "<", ">=", "<="};
+int num_of_operations = sizeof(operations) / sizeof(operations[0]);
+int magic_len = 0;
+int extension_len = 0;
+
 int main(int argc, char ** argv){
     char * database_name = "DaFAQ Database";
-    magic = "DaFAQ";
-    extension = ".dfq";
+    
     int error_check = 0;
     record_field ** record = NULL;
     int fd = 0;
@@ -12,8 +18,8 @@ int main(int argc, char ** argv){
     int num_of_fields = 0;
     int i = 0;
     int j = 1;
-    char target[] = "Heyo";
-    int itarget = 24;
+    char target[] = "zzzz";
+    int itarget = 20;
     bool * map = NULL;
 
     magic_len = strnlen(magic, STRING_LEN);
@@ -24,11 +30,11 @@ int main(int argc, char ** argv){
     }
 
     create_database(database_name);
-    create_table_interface("Table.dfq");
+/*    create_table_interface("Table.dfq");
     switch_field_interface("Table.dfq");
     error_check = switch_record_interface("Table.dfq", -1);
     error_check = switch_record_interface("Table.dfq", -1);
-    error_check = switch_record_interface("Table.dfq", -1);
+    error_check = switch_record_interface("Table.dfq", -1);*/
     
     //poop("test.dfq", "table2.md", true);
     diarrhea(".", NULL);
@@ -39,32 +45,20 @@ int main(int argc, char ** argv){
         perror("MAIN: Open error");
     }
 
-    //ftruncate(sort_fd, 0);
-/*    num_of_fields = get_num_of_fields(fd, false);
-    record_numbers = get_all_records(fd, &record, false);
-    printf("%i\n", record_numbers);
-    for(i=0; i<record_numbers; i++){
-        for(j=0; j<num_of_fields; j++){
-            printf("\nDATA LEN: %i\nFIELD INDEX: %i\nFIELD OFFSET: %i\nRECORD NUM: %i\nDATA: %s\n", record[i][j].data_len, record[i][j].field_index, record[i][j].record_field_offset, record[i][j].record_num, record[i][j].data);
-        }
-    }
+/*    ftruncate(sort_fd, 0);
     write(sort_fd, (char *)&i, sizeof(int));
     i = 0;
     write(sort_fd, (char *)&i, sizeof(int));
     quicksort_record_fields(fd, sort_fd, 0, true);
-    quicksort_record_fields(fd, sort_fd, 1, true);
+    sleep(10);*/
+    /*quicksort_record_fields(fd, sort_fd, 1, true);
     i = binary_search_sort_file(fd, sort_fd, target, 0, &map);
     printf("%i: %p\n", i, map);
     for(j=0; j<3; j++){
         printf("%i\n", map[j]);
-    }
-    i = binary_search_sort_file(fd, sort_fd, (char *)&itarget, 1, &map);
-    printf("%i: %p\n", i, map);
-    for(j=0; j<3; j++){
-        printf("%i\n", map[j]);
-    }
+    }*/
+    query_interface("Table.dfq", "Table.dfq.srt");
 
     //get_record_field(fd, &record, 0, 1, false);
     //printf("\nDATA LEN: %i\nFIELD INDEX: %i\nFIELD OFFSET: %i\nRECORD NUM: %i\nDATA: %s\n", record.data_len, record.field_index, record.record_field_offset, record.record_num, record.data);
-*/
 }
