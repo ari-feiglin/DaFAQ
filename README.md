@@ -69,6 +69,10 @@ As you can see, this project is split into a couple of directories:
 * **details** - in the directory itself: details regarding the state and usage of the program. 
     * In the sub directory **archive** is an archive of all the previous READMEs and any other outdated files regarding the state and/or usage of the system for previous versions
 
+### <ins>**The CColor Library:**</ins>  
+In order to print colored text, I used the CColor library that I wrote. Here is a link to the remote github repository where its source code can be found, along with a shared object file: https://github.com/ari-feiglin/CColor  
+A README containing all relevant information on its usage is provided there.
+
 ### <ins>**THE FUTURE/GOALS:** </ins>
 Here are some of my ideas for the future:
 * A querying language
