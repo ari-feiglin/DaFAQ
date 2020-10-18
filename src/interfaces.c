@@ -420,7 +420,7 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
     bool continue_loop = true;
     bool can_free_target_data = true;
     bool can_free_record = false;
-    operators operator = 0;
+    operators operator = -1;
     char * input = NULL;
     char * field_name = NULL;
     char * target_data = NULL;
@@ -538,6 +538,9 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
                 continue_loop = false;
                 break;
             }
+        }
+        if(-1 == operator){
+            print_color("~~INVALID OPERATOR~\n", RED, BOLD, RESET);
         }
     }
 
