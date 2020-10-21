@@ -44,7 +44,7 @@ typedef enum error_code_e{
 } error_code_t;
 
 typedef enum datatypes {CHAR=1, INT=4, STRING=STRING_LEN, BOOLEAN=1}datatype;
-typedef enum token {FIELD_TABLE, DaFAQ, DIGEST, CONSTIPATE, POOP, DIARRHEA, FROM, GET, MERGE, AT, WHERE, AVERAGE, SUM, AMOUNT}tokens, calls, queryers, functions;
+typedef enum token {FIELD_TABLE, DaFAQ, DIGEST, CONSTIPATE, POOP, DIARRHEA, FROM, GET, MERGE, AT, WHERE, AVERAGE, TSUM, AMOUNT}tokens, calls, queryers, functions;
 typedef enum operators {EQUALS=0, NOT_EQUALS, GREATER, LESS, GREATER_OR_EQUALS, LESS_OR_EQUALS}operators;
 
 typedef struct query{
@@ -113,4 +113,8 @@ int switch_record_interface(char * name, int record_num);
 error_code_t switch_field_interface(IN char * table_name);
 error_code_t query_interface(char * table_name, char * sort_file_name);
 
+//Aggregate functions
+int COUNT(int fd, int num_of_records, bool * valid_record_map);
+int SUM(int fd, int field_index, int num_of_records, bool * valid_record_map);
+double AVG(int fd, int field_index, int num_of_records, bool * valid_record_map);
 #endif

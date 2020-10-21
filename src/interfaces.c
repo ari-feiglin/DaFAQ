@@ -424,7 +424,7 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
     char * input = NULL;
     char * field_name = NULL;
     char * target_data = NULL;
-    char input_print[STRING_LEN] = {0};
+    char input_print[STRING_LEN+1] = {0};
     char * print_text = NULL;
     field * fields = NULL;
     bool * valid_record_map = NULL;
@@ -612,13 +612,37 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
     for(i=0; i<num_of_records; i++){
         if(valid_record_map[i]){
             if(NULL != record){
+                for(j=0; j<num_of_fields; j++){     //I accidentally used 
+                    if(NULL != record[j].data){
+                        free(record[j].data);
+                    }
+                }
                 free(record);
             }
-            return_value = get_record(table_fd, &record, i, false);
-            can_free_record = true;
 
-            for(j=0; j<num_of_fields; j++){
-                rect_text(record[j].data, &print_text, NAME_LEN);
+            return_value = get_record(table_fd, &record, i, false);
+            if(ERROR_CODE_SUCCESS != return_value){
+                goto cleanup;
+            }
+
+            for(j=0; j<num_of_fields; j++){ 
+                switch(record[j].data_len){
+                    case STRING:
+                        sprintf(input_print, "%s", record[j].data);
+                        break;
+                    case INT:
+                        sprintf(input_print, "%i", *((int *)record[j].data));
+                        break;
+                    case CHAR:
+                        sprintf(input_print, "%i", *((char *)record[j].data));
+                        break;
+                    default:
+                        print_color("~~INVALID DATATYPE~\n", RED, BOLD, RESET);
+                        return_value = ERROR_CODE_INVALID_DATATYPE;
+                        goto cleanup;
+                }
+
+                rect_text(input_print, &print_text, NAME_LEN);
                 print_color("~`~", BG_BLACK, FG,255,255,255, BOLD);
                 printf("%s", print_text);
                 print_color("~ ", RESET);
@@ -626,6 +650,8 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
             printf("\n");
         }
     }
+
+    printf("AVERAGE: %f\n", AVG(table_fd, field_index, num_of_records, valid_record_map));
 
 cleanup:
     if(NULL != fields)
@@ -641,9 +667,10 @@ cleanup:
     if(NULL != valid_record_map)
         free(valid_record_map);
         
-    if(can_free_record){
+    if(NULL != record){
         for(i=0; i<num_of_fields; i++){
-            free(record[i].data);
+            if(NULL != record[i].data)
+                free(record[i].data);
         }
         free(record);
     }

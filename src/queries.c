@@ -689,10 +689,10 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     if(ERROR_CODE_SUCCESS != error_check){
         goto cleanup;
     }
-    
-    while(*((int *)target_data) == *((int *)field.data)){       //This is a loop to get to the first instance of the target data
+/*    
+    while(*((int *)target_data) == *((int *)field.data)){       
         current_index--;
-        if(current_index <= 0){
+        if(current_index < 0){
             break;
         }
 
@@ -716,6 +716,19 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     if(*((int *)target_data) != *((int *)field.data)){
         current_index--;
     }
+*/
+
+    //This is a loop to get to the first instance of the target data
+    for(current_index; current_index > 0 && *((int *)target_data) == *((int *)field.data); current_index--){
+        if(NULL != field.data){
+            free(field.data);
+        }
+        return_value = get_record_field(table_fd, &field, record_nums[current_index], field_index, false);
+        if(ERROR_CODE_SUCCESS != return_value){
+            goto cleanup;
+        }
+    }
+    current_index++;
     first_matching_index = current_index;
 
     if(NULL != field.data){
@@ -799,7 +812,6 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
 cleanup:
     if(NULL != field.data)
         free(field.data);
-
     if(NULL != record_nums)
         free(record_nums);
     return return_value;
