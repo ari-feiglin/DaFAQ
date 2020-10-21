@@ -426,7 +426,8 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
     }
 
 cleanup:
-    close(fd);
+    if(-1 != fd)
+        close(fd);
     if(NULL != fields)
         free(fields);
     if(NULL != data)

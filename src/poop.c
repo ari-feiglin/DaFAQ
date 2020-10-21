@@ -254,7 +254,9 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
 
 
 cleanup:
-    close(dump_fd);
+    if(-1 != dump_fd)
+        close(dump_fd);
+        
     if(fields)
         free(fields);
     if(print_text)

@@ -651,8 +651,6 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
         }
     }
 
-    printf("AVERAGE: %f\n", AVG(table_fd, field_index, num_of_records, valid_record_map));
-
 cleanup:
     if(NULL != fields)
         free(fields);
