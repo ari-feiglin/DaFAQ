@@ -378,7 +378,7 @@ void print_credits(IN int row_len){
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* Next, there's my friend for whom I made my simple bank managment system.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~* Next, there's Illay Kaye (my friend) for whom I made my simple bank managment system. You can find his GitHub here: ~https://github.com/illayK~\n", BG_BLACK, BOLD, UNDERLINE, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
