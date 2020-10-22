@@ -29,12 +29,14 @@ int main(int argc, char ** argv){
         database_name = argv[1];
     }
 
+    print_menu();
+#if 0
     create_database(database_name);
-/*    create_table_interface("Table.dfq");
+    create_table_interface("Table.dfq");
     error_check = switch_record_interface("Table.dfq", -1);
     switch_field_interface("Table.dfq");
     error_check = switch_record_interface("Table.dfq", -1);
-    error_check = switch_record_interface("Table.dfq", -1);*/
+    error_check = switch_record_interface("Table.dfq", -1);
     
     
     //poop("test.dfq", "table2.md", true);
@@ -62,4 +64,5 @@ int main(int argc, char ** argv){
 
     //get_record_field(fd, &record, 0, 1, false);
     //printf("\nDATA LEN: %i\nFIELD INDEX: %i\nFIELD OFFSET: %i\nRECORD NUM: %i\nDATA: %s\n", record.data_len, record.field_index, record.record_field_offset, record.record_num, record.data);
+#endif
 }

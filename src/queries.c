@@ -794,3 +794,81 @@ cleanup:
         free(record_nums);
     return return_value;
 }
+
+/**
+ * @brief: Creates a valid record map based on input
+ * @param[IN] table_fd: The file descriptor of the table file
+ * @param[IN] sort_fs: The file descriptor of the sort file
+ * @param[IN] target_data: A byte array of the target parameter 
+ * @param[IN] operator: The in/equality operator 
+ * @param[IN] field_index: The index of the field to operate on
+ * @param[IN] num_of_records: The number of records in the table
+ * @param[OUT] valid_record_map: A pointer to the map of valid records to fill
+ * 
+ * @returns: ERROR_CODE_SUCCESS on success, else an indicative error of type error_code_t
+ */
+error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * target_data, IN operators operator, IN int field_index, IN int num_of_records, OUT bool ** valid_record_map){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int error_check = 0;
+
+    while(true){
+        return_value = binary_search_sort_file(table_fd, sort_fd, target_data, operator, field_index, valid_record_map);
+        
+        if(ERROR_CODE_SUCCESS != return_value){
+            if(ERROR_CODE_OUT_OF_DATE == return_value){
+                error_check = ftruncate(sort_fd, 0);
+                if(-1 == error_check){
+                    perror("QUERY_INTERFACE: Ftruncate error");
+                    return_value = ERROR_CODE_COULDNT_TRUNCATE;
+                    goto cleanup;
+                }
+                error_check = lseek(sort_fd, 0, SEEK_SET);
+                if(-1 == error_check){
+                    perror("QUERY_INTERFACE: Lseek error");
+                    return_value = ERROR_CODE_COULDNT_LSEEK;
+                    goto cleanup;
+                }
+
+                error_check = write(sort_fd, &num_of_records, sizeof(num_of_records));
+                if(-1 == error_check){
+                    perror("QUERY_INTERFACE: Write error");
+                    return_value = ERROR_CODE_COULDNT_WRITE;
+                    goto cleanup;
+                }
+
+                error_check = 0;
+
+                error_check = write(sort_fd, &error_check, sizeof(error_check));
+                if(-1 == error_check){
+                    perror("QUERY_INTERFACE: Write error");
+                    return_value = ERROR_CODE_COULDNT_WRITE;
+                    goto cleanup;
+                }
+
+                return_value = quicksort_record_fields(table_fd, sort_fd, field_index, true);
+                if(ERROR_CODE_SUCCESS != return_value){
+                    print_color("~~COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
+                    goto cleanup;
+                }
+            }
+            else if(ERROR_CODE_FIELD_DOESNT_EXIST == return_value){
+                return_value = quicksort_record_fields(table_fd, sort_fd, field_index, false);
+                if(ERROR_CODE_SUCCESS != return_value){
+                    print_color("~~COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
+                    printf("%i\n", return_value);
+                    goto cleanup;
+                }
+            }
+            else{
+                print_color("~~OOPS COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
+                goto cleanup;
+            }
+        }
+        else{
+            break;
+        }
+    }
+
+cleanup:
+    return return_value;
+}

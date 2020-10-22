@@ -21,6 +21,7 @@ error_code_t create_database(IN char * name){
                 perror("Chdir error");
                 goto cleanup;
             }
+            return_value = ERROR_CODE_SUCCESS;
             goto cleanup;
         }
         else{       //Other error, 

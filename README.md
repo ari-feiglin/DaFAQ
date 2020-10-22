@@ -7,16 +7,14 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.3.0**</ins>
-<ins>**v0.3 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.3.0 (v0.3.0) was released October 18, 2020
+## <ins>**Version 0.4.0**</ins>
+<ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
+Version 0.4.0 (v0.4.0) was released October 23, 2020
 
-### <ins>**v0.3.0 CHANGES:**</ins>
-A list of features added in version 0.3.0
-* Even more bugfixes... (Like, a lot. Not to mention the dozens of bugs I made when adding the querying feature. Most of these were due to poor planning)
-* Added sort files. These are files that have the sorted indexes of records based off of their fields
-* Added simple queries! These allow you to filter data in a table! See details/Usage for my details.
-* Documented every function
+### <ins>**v0.4.0 CHANGES:**</ins>
+A list of features added in version 0.4.0
+* Even more bugkills... (Querying still had a few bugs)
+* Added a GUI
 
 ### <ins>**USAGE:** </ins>
 
@@ -50,6 +48,10 @@ A list of features added in version 0.3.0
 * **quicksort_record_fields** - Sorts an input field of a table, and stores the sorted list in a sort file.
 * **binary_search_sort_file** - Executes a query and returns a map of valid records.
 
+**Menu:**
+Only one of these functions is public. The rest are only utilized by this function.
+* **print_menu** - Prints the GUI for interacting with the database system. I haven't vigorously tested this for leaks, so there may be a few.
+
 **Other Functions:**
 * **check_magic** - checks if a file has the proper magic sequence in order to be a valid DaFAQ file.
 * **check_input_mask** - checks if input mask is valid. More on input masks in details/Usage
@@ -63,7 +65,8 @@ The standard.* files are comprised of functions I find useful in many of my proj
 ### <ins>**AN EXPLANATION OF THE STRUCTURE OF THIS PROJECT:**</ins>
 As you can see, this project is split into a couple of directories:
 * In the main directory itself: the Makefile, executable, and README file (for easy access)
-* **src** - the directory where the source code is stored
+* **src** - the directory where the lower level source code for the is stored
+* **interfaces** - the directory where all of the pretty printing happens
 * **include** - the directory where all header files are stored
 * **obj** - the directory created by the Makefile for the storage of object files created during the compilation process
 * **details** - in the directory itself: details regarding the state and usage of the program. 
@@ -79,7 +82,7 @@ Here are some of my ideas for the future:
 * Fully comment the project
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.3.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.4.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 

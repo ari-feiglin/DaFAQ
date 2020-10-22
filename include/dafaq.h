@@ -48,12 +48,11 @@ typedef enum token {FIELD_TABLE, DaFAQ, DIGEST, CONSTIPATE, POOP, DIARRHEA, FROM
 typedef enum operators {EQUALS=0, NOT_EQUALS, GREATER, LESS, GREATER_OR_EQUALS, LESS_OR_EQUALS}operators;
 
 typedef struct query{
-    queryers queryers[NUM_OF_QUERYERS];
-    functions functions[MAX_CALLS];
-    char tables[MAX_CALLS][STRING_LEN];
-    char get_fields[MAX_CALLS][STRING_LEN];
-    char at_fields[MAX_CALLS][STRING_LEN];
-    char conditions[MAX_CALLS][STRING_LEN];
+    int table_fds[MAX_CALLS];
+    int field_indexes[MAX_CALLS][MAX_CALLS];
+    int merge_field_indexes[2];
+    int target[MAX_CALLS][MAX_CALLS];
+    operators operator[MAX_CALLS][MAX_CALLS];
 }query;
 
 typedef struct field{
@@ -102,6 +101,7 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
 error_code_t get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset);
 error_code_t quicksort_record_fields(int table_fd, int sort_file_fd, int field_index, bool truncate);
 error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, operators operation, int field_index, bool ** valid_record_indexes);
+error_code_t get_valid_record_map(int table_fd, int sort_fd, char * target_data, operators operator, int field_index, int num_of_records, bool ** valid_record_map);
 
 //Pooping
 int poop(char * table_name, char * dump_file, bool truncate);
@@ -117,4 +117,8 @@ error_code_t query_interface(char * table_name, char * sort_file_name);
 int COUNT(int fd, int num_of_records, bool * valid_record_map);
 int SUM(int fd, int field_index, int num_of_records, bool * valid_record_map);
 double AVG(int fd, int field_index, int num_of_records, bool * valid_record_map);
+
+//Menu
+int print_menu();
+
 #endif

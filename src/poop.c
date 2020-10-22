@@ -335,30 +335,3 @@ cleanup:
     }
     return num_of_tables;
 }
-
-int execute_query(query input_query){
-    int i = 0;
-    int j = 0;
-    int num_of_fields = 0;
-    int fds[MAX_CALLS] = {0};
-    int * get_fields_indexes[MAX_CALLS] = {0};
-    field * fields = NULL;
-
-    if(FROM != input_query.queryers[0] || GET != input_query.queryers[1]){
-        print_color("~~ERROR: INVALID QUERY FORMAT~\n", B_RED, BOLD, RESET);
-        goto cleanup;
-    }
-
-    for(i=0; i<MAX_CALLS; i++){
-        if(0 != input_query.tables[i][0]){      //Check that the table file path is initialized
-            fds[i] = open(input_query.tables[i], O_RDONLY);     //Open table file
-            if(-1 == fds[i]){
-                perror("EXECUTE_QUERY: Open error");
-                goto cleanup;
-            }
-        }
-    }
-
-cleanup:
-    return 0;
-}

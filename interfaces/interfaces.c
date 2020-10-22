@@ -544,62 +544,9 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
         }
     }
 
-    while(true){
-        return_value = binary_search_sort_file(table_fd, sort_fd, target_data, operator, field_index, &valid_record_map);
-        
-        if(ERROR_CODE_SUCCESS != return_value){
-            if(ERROR_CODE_OUT_OF_DATE == return_value){
-                error_check = ftruncate(sort_fd, 0);
-                if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Ftruncate error");
-                    return_value = ERROR_CODE_COULDNT_TRUNCATE;
-                    goto cleanup;
-                }
-                error_check = lseek(sort_fd, 0, SEEK_SET);
-                if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Lseek error");
-                    return_value = ERROR_CODE_COULDNT_LSEEK;
-                    goto cleanup;
-                }
-
-                error_check = write(sort_fd, &num_of_records, sizeof(num_of_records));
-                if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Write error");
-                    return_value = ERROR_CODE_COULDNT_WRITE;
-                    goto cleanup;
-                }
-
-                error_check = 0;
-
-                error_check = write(sort_fd, &error_check, sizeof(error_check));
-                if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Write error");
-                    return_value = ERROR_CODE_COULDNT_WRITE;
-                    goto cleanup;
-                }
-
-                return_value = quicksort_record_fields(table_fd, sort_fd, field_index, true);
-                if(ERROR_CODE_SUCCESS != return_value){
-                    print_color("~~COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
-                    goto cleanup;
-                }
-            }
-            else if(ERROR_CODE_FIELD_DOESNT_EXIST == return_value){
-                return_value = quicksort_record_fields(table_fd, sort_fd, field_index, false);
-                if(ERROR_CODE_SUCCESS != return_value){
-                    print_color("~~COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
-                    printf("%i\n", return_value);
-                    goto cleanup;
-                }
-            }
-            else{
-                print_color("~~OOPS COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
-                goto cleanup;
-            }
-        }
-        else{
-            break;
-        }
+    return_value = get_valid_record_map(table_fd, sort_fd, target_data, operator, field_index, num_of_records, &valid_record_map);
+    if(ERROR_CODE_SUCCESS != return_value){
+        goto cleanup;
     }
 
     for(i=0; i<num_of_fields; i++){
@@ -650,6 +597,8 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
             printf("\n");
         }
     }
+
+    return_value = ERROR_CODE_SUCCESS;
 
 cleanup:
     if(NULL != fields)
