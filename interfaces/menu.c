@@ -44,7 +44,7 @@ void print_indent_line(IN int indent_len, IN int row_length, IN bool centered, I
     for(i=0; i<indent_len; i++){
         printf(" ");
     }
-    print_color("~", BG_BLACK);
+    print_color("`", BG,0,0,0);
     for(i=0; i<row_length - indent_len*(centered+1); i++){
         printf(" ");
     }
@@ -53,6 +53,7 @@ void print_indent_line(IN int indent_len, IN int row_length, IN bool centered, I
         printf(" ");
     }
 
+    print_color("~", RESET);
     printf("\033[%dD", row_length-indent_len);
 }
 
@@ -110,10 +111,10 @@ void print_title(IN int row_length){
     }
 
     print_indent_line(0, row_length, true, 0,200,255);
-    print_color("~\n~", RESET, BG_BLACK, 0,200,255);
+    print_color("`\n~", RESET, BG,0,0,0, 0,200,255);
     
     print_indent_line(0, row_length, true, 0,200,255);
-    print_color("~", BG_BLACK);
+    print_color("`", BG,0,0,0);
     simple_center_text(subtitle_len, row_length-4);
     print_color("``~~", BG,0,200,255, FG,0,0,255, BOLD, ITALIC);
     printf("%s", subtitle);
@@ -139,110 +140,110 @@ int sprint_menu(IN int cursor_pos){
     print_title(75);
 
     print_indent_line(2, row_len, true, 0,200,255);
-    print_color("~\n~", RESET, BG_BLACK);
+    print_color("`\n~", RESET, BG,0,0,0);
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~\n", RESET);
+    print_color("`\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(0 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Create New Database~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Create New Database~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(1 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Create New Table~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Create New Table~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(2 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Edit Table~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Edit Table~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(3 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Create New Record~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Create New Record~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(4 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Edit Record~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Edit Record~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(5 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Poop Table~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Poop Table~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(6 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Diarrhea Database~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Diarrhea Database~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(7 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Execute Query~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Execute Query~\n", BG,0,0,0, BOLD, RESET);
     
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
@@ -254,45 +255,45 @@ int sprint_menu(IN int cursor_pos){
     print_indent_line(0, row_len, true, 0,200,255);
     print_color("~\n", RESET);
     print_indent_line(2, row_len, true, 0,200,255);
-    print_color("~\n~", RESET, BG_BLACK);
+    print_color("`\n~", RESET, BG,0,0,0);
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(8 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~About~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~About~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(9 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Credits~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Credits~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ", BG_BLACK);
+    print_color("`  ", BG,0,0,0);
     if(10 != cursor_pos){
         print_indent_line(1, row_len - 5, false, 0,200,255);
     }
     else{
         print_indent_line(1, row_len - 5, false, 255,255,255);
     }
-    print_color("~  ~Usage~\n", BG_BLACK, BOLD, RESET);
+    print_color("`  ~Usage~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
@@ -315,28 +316,28 @@ void print_about(IN int row_len){
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~The DaFAQ Database System was created by Ari Feiglin for no good reason at all~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~The DaFAQ Database System was created by Ari Feiglin for no good reason at all~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~The first line of code was written on October 2, 2020~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~The first line of code was written on October 2, 2020~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~The reason I created the program is because my class was using Microsoft Access, and as a Linux user, I felt like my alternatives~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~The reason I created the program is because my class was using Microsoft Access, and as a Linux user, I felt like my alternatives~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~(LibreOffice Base) were too modern. Like, who needs fancy relationships and forms, a nice GUI, and a non text-based interface?~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~(LibreOffice Base) were too modern. Like, who needs fancy relationships and forms, a nice GUI, and a non text-based interface?~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~Also, I had created a simple banking system for/because of a friend, and this also helped give me the idea to create DaFAQ.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~Also, I had created a simple banking system for/because of a friend, and this also helped give me the idea to create DaFAQ.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~So, work began on October 2nd and Version 0.0.0 was released on October 5th. It was a pretty simple program, and you couldn't do much with it~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~So, work began on October 2nd and Version 0.0.0 was released on October 5th. It was a pretty simple program, and you couldn't do much with it~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~I'm not saying that this current version is any good, either. It is still simple, and nearly useless.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~I'm not saying that this current version is any good, either. It is still simple, and nearly useless.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~Hopefully in the future this will become ~almost~~~ useless. Hopefully one day this will actually function well. Hopefully.~\n", BG_BLACK, BOLD, ITALIC, RESET, BG_BLACK, BOLD, RESET);
+    print_color("~  ~Hopefully in the future this will become ~almost~~~ useless. Hopefully one day this will actually function well. Hopefully.~\n", BG,0,0,0, BOLD, ITALIC, RESET, BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
@@ -355,48 +356,48 @@ void print_credits(IN int row_len){
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~I am proud to say that almost all of the code in this program was written by me, and me only~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~I am proud to say that almost all of the code in this program was written by me, and me only~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~The only piece of code taken from someone/thing other than me was the code for the iterative quicksort, which was taken from GeeksForGeeks~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~The only piece of code taken from someone/thing other than me was the code for the iterative quicksort, which was taken from GeeksForGeeks~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~Everything else I wrote by myself.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~Everything else I wrote by myself.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~But, that's not to say that nothing else inspired me. So here are a few people that inspired me to create DaFAQ~\n", BG_BLACK, BOLD, RESET);
-
-    print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~\n", RESET);
-
-    print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* First off, we have my school, which is forcing me to learn about making databases with MS Access. Without them I would never have made~\n", BG_BLACK, BOLD, RESET);
-    print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~  DaFAQ probably.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~But, that's not to say that nothing else inspired me. So here are a few people that inspired me to create DaFAQ~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* Next, there's Illay Kaye (my friend) for whom I made my simple bank managment system. You can find his GitHub here: ~https://github.com/illayK~\n", BG_BLACK, BOLD, UNDERLINE, RESET);
+    print_color("~  ~* First off, we have my school, which is forcing me to learn about making databases with MS Access. Without them I would never have made~\n", BG,0,0,0, BOLD, RESET);
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~  ~  DaFAQ probably.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* Of course there's my database class teacher.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~* Next, there's Illay Kaye (my friend) for whom I made my simple bank managment system. You can find his GitHub here: ~https://github.com/illayK~\n", BG,0,0,0, BOLD, UNDERLINE, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* This goes without saying, but all of those online proramming forums/wikis/etc.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~* Of course there's my database class teacher.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("~  ~* And everyone else who has helped me with this project.~\n", BG_BLACK, BOLD, RESET);
+    print_color("~  ~* This goes without saying, but all of those online proramming forums/wikis/etc.~\n", BG,0,0,0, BOLD, RESET);
+
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~\n", RESET);
+
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~  ~* And everyone else who has helped me with this project.~\n", BG,0,0,0, BOLD, RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);
