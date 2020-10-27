@@ -21,6 +21,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
     int current_field = 0;
     int int_data = 0;
     int name_len = 0;
+    int row_len = 75;
     bool is_valid = false;
     bool should_dump = true;
     char byte_data = 0;
@@ -249,7 +250,7 @@ int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
         }
     }
     else{
-        printf("\n");
+        printf("\n\n");
     }
 
 

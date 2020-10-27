@@ -120,5 +120,7 @@ double AVG(int fd, int field_index, int num_of_records, bool * valid_record_map)
 
 //Menu
 int print_menu();
+void print_indent_line(int indent_len, int row_length, bool centered, int r, int g, int b);
+void print_title(int row_length);
 
 #endif

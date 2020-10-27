@@ -271,3 +271,31 @@ int ntos(IN char * number_data, OUT char * string, IN int num_of_numbers, IN int
 cleanup:
     return string_len;
 }
+
+/**
+ * @brief: Prints a line of spaces and returns to the beginning of the line
+ * @param[IN] len: The length of the rectangle
+ */
+void simple_rect_text(IN int len){
+    int i = 0;
+
+    for(i=0; i<len; i++){
+        printf(" ");
+    }
+    
+    printf("\r");
+}
+
+/**
+ * @brief: Prints a line of spaces and goes to a place such that a string of string_len will be centered
+ * @param[IN] string_len: The length of the string that will be printed
+ * @param[IN] len: The length of the line
+ */
+void simple_center_text(IN int string_len, IN int len){
+    int i = 0;
+
+    for(i=0; i<len; i++){
+        printf(" ");
+    }
+    printf("\r\033[%dC", (len - string_len)/2);
+}
