@@ -536,6 +536,11 @@ error_code_t click_handler(int cursor_pos){
                 error_check = ERROR_CODE_SUCCESS;
             }
 
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+            print_indent_line(2, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+
             break;
 
         case 6:
@@ -543,6 +548,12 @@ error_code_t click_handler(int cursor_pos){
             if(-1 != error_check){
                 error_check = ERROR_CODE_SUCCESS;
             }
+
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+            print_indent_line(2, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+
             break;
 
         case 7:
@@ -616,7 +627,7 @@ error_code_t click_handler(int cursor_pos){
 
     print_indent_line(0, row_len, true, 0,200,255);
     print_color("~\n", RESET);
-
+    
     print_color("\n~--------------------------------------------------~\n\n", B_BLUE, RESET);
     while(continue_loop){
         print_color("~~Input 'q' (the enter) to quit:~~ ", BLUE, BOLD, RESET);
@@ -634,6 +645,8 @@ error_code_t click_handler(int cursor_pos){
 cleanup:
     if(NULL != input)
         free(input);
+    if(NULL != sort_file)
+        free(sort_file);
 
     return error_check;
 }

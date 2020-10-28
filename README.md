@@ -9,16 +9,21 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 ## <ins>**Version 0.4.0**</ins>
 <ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.4.2 (v0.4.2) was released October 28, 2020
+Version 0.4.2 (v0.4.2) was released October 29, 2020
 
 ### <ins>**v0.4 CHANGES:**</ins>
 A list of features added in version 0.4
-* Even more bughunts... ( :( )
+* A bug massacre! 
+  * Fixed a bug that messed up changes in datatypes of existing records when a field is changed
+  * Fixed a bug where the name of fields can be messed up.
+  * And a few more...
 * Interfaces are now integrated into the "GUI" (Not all error messages will be printed properly. Only the ones that come from interfaces are. I'm uncertain if this will change. If I do change it, error messages will look weird for people calling the functions without interfaces.)
 * Changed project structure
-* Fixed a bug that messed up changes in datatypes of existing records when a field is changed
+* Added usage on how to use the interfaces
 
 ### <ins>**USAGE:** </ins>
+
+For information on how to use the interface, look at details/Usage. The following is quick descriptions of various functions in the program:
 
 **Data Management Functions:**
 * **create_database** - create a new database directory (a directory for holding tables) if one doesn't exist, and enter it.
@@ -65,7 +70,7 @@ Only one of these functions is public. The rest are only utilized by this functi
 The interactive text interfaces I so heavily used in this program rely heavily on the CColor library I wrote. I strongly suggest that you check it out. <br />
 The standard.* files are comprised of functions I find useful in many of my projects. 
 
-### <ins>**AN EXPLANATION OF THE STRUCTURE OF THIS PROJECT:**</ins>
+### <ins>**AN EXPLANATION OF THE LAYOUT OF THIS PROJECT:**</ins>
 As you can see, this project is split into a couple of directories:
 * In the main directory itself: the Makefile, executable, and README file (for easy access)
 * **src** - the source code directory. It is split up into:

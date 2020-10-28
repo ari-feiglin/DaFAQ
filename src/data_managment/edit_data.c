@@ -26,7 +26,8 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     bool valid = false;
     bool new_file = true;
     bool new_field = false;
-    bool can_free = false;
+    bool can_free_new_field = false;
+    bool can_free_old_field = false;
     bool can_free_input_mask = false;
     char * del_name = "del_file";
     field * fields = NULL;
@@ -80,19 +81,27 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     if(NULL == field_name){
         field_name = old_fields[field_num].name;
     }
-    if(NULL == input_mask && STRING == data_type && !new_field){
-        input_mask = old_fields[field_num].input_mask;
+
+    if(NULL != input_mask && STRING == data_type){  
     }
-    else{
-        input_mask = malloc(NAME_LEN);
-        if(NULL == input_mask){
-            perror("SWITCH_FIELD: Malloc error");
-            return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
-            goto cleanup;
+    else if(NULL == input_mask){
+        if(new_field || STRING != data_type){
+            input_mask = malloc(NAME_LEN);
+            if(NULL == input_mask){
+                perror("SWITCH_FIELD: Malloc error");
+                return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+                goto cleanup;
+            }
+            can_free_input_mask = true;
+            memset(input_mask, 0, NAME_LEN);
         }
-        can_free_input_mask = true;
+        else{
+            input_mask = old_fields[field_num].input_mask;
+        }
+    }
+    else if(NULL != input_mask){
         memset(input_mask, 0, NAME_LEN);
-        }
+    }
 
     fields = malloc(num_of_fields * sizeof(field));
     if(NULL == fields){
@@ -102,12 +111,11 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     }
 
     memcpy(fields, old_fields, original_num_of_fields*sizeof(field));
-
     fields[field_num].data_len = data_type;
-    memcpy(fields[field_num].name, field_name, NAME_LEN);
-    memcpy(fields[field_num].input_mask, input_mask, NAME_LEN);
-
-
+    memset(fields[field_num].name, 0, NAME_LEN);
+    memset(fields[field_num].input_mask, 0, NAME_LEN);
+    memcpy(fields[field_num].name, field_name, strnlen(field_name, NAME_LEN));
+    memcpy(fields[field_num].input_mask, input_mask, strnlen(input_mask, NAME_LEN));
 
     if(0 == num_of_records){
         new_file = false;
@@ -194,6 +202,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
             goto cleanup;
         }
 
+        old_record_field.data = NULL;
         for(i=0; i<num_of_records; i++){
             data_offset = 0;
             for(j=0; j<original_num_of_fields; j++){
@@ -205,21 +214,24 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                 if(ERROR_CODE_SUCCESS != error_check){
                     goto cleanup;
                 }
+                can_free_old_field = true;
+
+
                 new_record_field.data_len = fields[j].data_len;
                 new_record_field.field_index = j;
                 new_record_field.record_num = i;
-                if(can_free){
+                if(can_free_new_field){
                     free(new_record_field.data);
                 }
                 new_record_field.data = NULL;
-                can_free = false;
+                can_free_new_field = false;
 
                 if(j == field_num){
                     switch(fields[field_num].data_len){
                         case STRING:
                             if(INT == old_fields[field_num].data_len || CHAR == old_fields[field_num].data_len){
                                 ntos(old_record_field.data, &(new_record_field.data), 1, old_fields[field_num].data_len);
-                                can_free = true;
+                                can_free_new_field = true;
                             }
                             else{
                                 new_record_field.data = old_record_field.data;
@@ -234,9 +246,11 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                                     break;
                                 case INT:
                                     new_record_field.data = old_record_field.data;
+                                    can_free_old_field = false;
                                     break;
                                 case CHAR:
                                     new_record_field.data = (char *)old_record_field.data;
+                                    can_free_old_field = false;
                                     break;
                             }
                             break;
@@ -249,9 +263,11 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                                     break;
                                 case INT:
                                     new_record_field.data = (char *)old_record_field.data;
+                                    can_free_old_field = false;
                                     break;
                                 case CHAR:
                                     new_record_field.data = old_record_field.data;
+                                    can_free_old_field = false;
                                     break;
                             }
                             break;
@@ -260,13 +276,13 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                 }
                 else{
                     new_record_field = old_record_field;
+                    can_free_old_field = false;
                 }
 
                 new_record_field.record_field_offset = data_offset;
                 data_offset += new_record_field.data_len;
                 
                 write_record_fields(new_fd, 1, &new_record_field, false);
-                //getchar();
             }
 
             if(new_field){
@@ -282,7 +298,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                     goto cleanup;
                 }
                 memset(new_record_field.data, 0, new_record_field.data_len);
-                can_free = true;
+                can_free_new_field = true;
 
                 write_record_fields(new_fd, 1, &new_record_field, false);
             }
@@ -303,7 +319,7 @@ cleanup:
     if(NULL != new_record_field.data){
         free(new_record_field.data);
     }
-    if(NULL != old_record_field.data){
+    if(NULL != old_record_field.data && can_free_old_field){
         free(old_record_field.data);
     }
     if(can_free_input_mask){

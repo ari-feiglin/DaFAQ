@@ -84,6 +84,7 @@ error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field *
     int num_of_records = 0;
     int sort_fd = 0;
     int zero = 0;
+    int i = 0;
     int row_len = 75;
     char * sort_file_name = NULL;
 
@@ -147,6 +148,7 @@ error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field *
     sort_file_name = malloc(strnlen(table_name, STRING_LEN) + extension_len + 1);
     sprintf(sort_file_name, "%s.srt", table_name);
 
+    remove(sort_file_name);
     sort_fd = creat(sort_file_name, 0666);
     if(-1 == sort_fd){
         print_indent_line(1, row_len, true, 255,0,0);

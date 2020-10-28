@@ -47,7 +47,11 @@ int create_table_interface(IN char * table_name){
         print_color(prompt, BG,0,0,0, BOLD, RESET);
         print_indent_line(1, row_len, true, 0,200,255);
         print_color("`  ", BG,0,0,0);
-        get_raw_input(NULL, &field_name);
+        error_check = get_raw_input(NULL, &field_name);
+        if(-1 == error_check){
+            num_of_fields = -1;
+            goto cleanup;
+        }
         print_color("~", RESET);
 
         difference = strncmp(field_name, "quit", STRING_LEN);
@@ -87,6 +91,7 @@ int create_table_interface(IN char * table_name){
         print_color("~", RESET);
         lower(field_data_type, 0);
 
+        memset(new_field.name, 0, NAME_LEN);
         strncpy(new_field.name, field_name, strnlen(field_name, NAME_LEN));
 
         difference = strncmp(field_data_type, "char", STRING_LEN);
@@ -276,6 +281,7 @@ int switch_record_interface(IN char * table_name, int record_num){
                 if(0 != fields[i].input_mask[0]){
                     valid_mask = valid_input(input, fields[i].input_mask);
                     if(-1 == valid_mask){
+                        num_of_records = -1;
                         goto cleanup;
                     }
                     if(0 == valid_mask){
@@ -584,6 +590,8 @@ error_code_t query_interface(char * table_name, char * sort_file_name){
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("`  ~~CREATING QUERY~\n", BG,0,0,0, UNDERLINE, BOLD, RESET);
+    print_indent_line(1, row_len, true, 0,200,255);
+    printf("\n");
     
     while(continue_loop){
         print_indent_line(1, row_len, true, 0,200,255);

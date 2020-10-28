@@ -1,5 +1,52 @@
-# <ins>**USAGE OF THE DaFAQ DATABASE SYSTEM**</ins>
-This is a description of the how to use the database system once the carpet code has been written (by carpte code, I mean the code that uses the framework provided hereby the functions I wrote), not a description of how to use each function. That will be given in some other place.
+# <u>**USAGE OF THE DaFAQ DATABASE SYSTEM**</u>
+This is how to navigate the DaFAQ menu and interact with databases.
+
+## **WHAT IS DaFAQ?**
+DaFAQ is an open-source Nearly Useless Database Engine (NUDE). It was created because some dumb kid wanted to make a database system to show to his teachers in the hopes of (possibly) not having to take a class on databases. Hasn't worked yet. 
+
+## **WHAT IS A DaFAQ DATABASE?**
+A DaFAQ Database is nothing more than a directory in your file system. In this directory are two types of files: table files and sort files. These store data on tables that you create. 
+
+## <u>**THE MENU:**</u>
+When running DaFAQ, if no changes have been made to make a different (better) interface or whatever, you will be met with a menu. The following is alist of every option in the menu, and a detailed documentation on how to use it.  
+When you select an option (with enter) you can go back to the menu without completing the option by typing in "quit" (no quotations). After the option finishes (either by error, typing quit, or just finishing), you will be asked to type q to return to the menu. This is so that you can view messages given by the system. If an error occurred, another message will pop up (in red), telling you an error had occurred. Review previous error messages and determine if you would like to continue or terminate the process. If you would like to terminate, enter q. 
+
+* ### **CREATE DATABASE:**
+  This is the first option, and you guessed it, it's for creating databases. Like I said before, DaFAQ databases are nothing more than directories. So this will create a new directory with the given name and enter it. If the directory already exists, it will not be removed, it will just be entered and a message will pop up telling you that no directory was created. If you would like to navigate to a directory, just enter the path.
+
+* ### **CREATE NEW TABLE**
+  This allows you to create a new table. Any existing table will be removed. As I explained earlier, a table is comprised of two files: a table files, and a sort file. This option creates and initializes both. We'll get to sort files later. A table file contains all the data held in a table. When you create one with this option, it will ask you for a table name. In order for <u>Diarrhea</u> to work on the table, give the table the extension .dfq , but this is not necessary. to see more details on table files, view details/structure. 
+  After you give the system the name of the table file you want to create, you will need to give metadata on the fields of the table. The metadata consits of:
+  * A field name : The name of the field
+  * The datatype of the field: Either "string", "int", "char", or "boolean". (Boolean is redundant and doesn't provide anything different from a char datatype)
+  * An input mask: **Only if the datatype is a string** this will allow you to filter input. View "INPUT MASKS" later on in this documentation.
+  If you want to stop inputting fields, input "quit" when it asks for field name. All input can be changed later, don't worry.
+
+* ### **EDIT TABLE:**
+  This allows you to edit fields in an already existing table. This will do its best to keep the old data, in its new form, but will not always succeed. For instance, converting from a string with letters or too large of a value (for instance "hello78", "12345678912345412345673456234561356784") will result in some other value. Same goes with conversion from an int to a char (given that the int is too large). 
+  You will be told to give the following:
+  * The name of the table file
+  * Field number: The index of the field you want to change
+  * A field name : The name of the new field
+  * The datatype of the field: Either "string", "int", "char", or "boolean". (Boolean is redundant and doesn't provide anything different from a char datatype)
+  * An input mask: **Only if the datatype is a string** this will allow you to filter input. View "INPUT MASKS" later on in this documentation.
+  
+* ### **CREATE NEW RECORD:**
+  This creates a new record based on the tables field. You will be asked to give the table file name and input for every field.
+
+* ### **EDIT RECORD:**
+  This allows you to edit an already existing record. It asks for the record index and data on every field.
+
+* ### **POOP TABLE:**  
+  This prints out a table as, you guessed it, a table! All you need to input is the table file name.
+
+* ### **DIARRHEA:**
+  This poops every table in the current database/directory.
+
+* ### **EXECUTE QUERY:**
+  This allows you to filter values in a table. View "Simple Queries" for more detail on how it works and usage.
+
+And that's it. The following are more in-depth explanantions on various things.
 
 ### **SIMPLE QUERIES:** <br />
 **The process:**

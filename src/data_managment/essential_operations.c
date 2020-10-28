@@ -356,6 +356,7 @@ int valid_input(IN char * input, IN char * input_mask){
     int input_len = 0;
     int input_mask_len = 0;
     int i = 0;
+    bool size_valid = true;
 
     input_len = strnlen(input, STRING_LEN);
     if(-1 == input_len){
@@ -369,6 +370,10 @@ int valid_input(IN char * input, IN char * input_mask){
         perror("VALID_INPUT: Strnlen error");
         is_valid = -1;
         goto cleanup;
+    }
+
+    if(input_len != input_mask_len){
+        size_valid = false;
     }
 
     for(i=0; i<input_len; i++){
@@ -433,12 +438,22 @@ int valid_input(IN char * input, IN char * input_mask){
         }
         else if('e' == input_mask[i]){
             is_valid = 1;
+            size_valid = true;
             goto cleanup;
         }
-        else{
+        else if(0 == input_mask[i]){
             is_valid = 0;
             goto cleanup;
         }
+        else{
+            is_valid = -1;
+            print_color("~~INVALID INPUT MASK~\n", RED, BOLD, RESET);
+            goto cleanup;
+        }
+    }
+
+    if(!size_valid){
+        is_valid = 0;
     }
 
 cleanup:
