@@ -7,7 +7,7 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.4.0**</ins>
+## <ins>**Version 0.4.2**</ins>
 <ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
 Version 0.4.2 (v0.4.2) was released October 29, 2020
 
