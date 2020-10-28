@@ -18,6 +18,6 @@ int upper(char * string, int len);
 int change_echo(bool on);
 int center_text(char * text, char ** centered_text, int len);
 int rect_text(char * text, char ** rectangled_text, int len);
-int ntos(char * number_data, char *string, int num_of_numbers, int num_len);
+int ntos(IN char * number_data, OUT char ** string, IN int num_of_numbers, IN int num_len);
 void simple_rect_text(int len);
 void simple_center_text(int string_len, int len);

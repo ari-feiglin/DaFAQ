@@ -444,3 +444,47 @@ int valid_input(IN char * input, IN char * input_mask){
 cleanup:
     return is_valid;
 }
+
+int write_record_fields(int fd, int num_of_record_fields, record_field * record_fields, bool preserver_offset){
+    int num_of_fields = 0;
+    int record_len = 0;
+    int bytes_written = 0;
+    int total_bytes_written = -1;
+    int i = 0;
+    int error_check = 0;
+    off_t record_start = 0;
+
+    num_of_fields = get_num_of_fields(fd, false);
+    if(-1 == num_of_fields){
+        goto cleanup;
+    }
+
+    record_len = get_len_of_record(fd, false);
+    if(-1 == record_len){
+        goto cleanup;
+    }
+
+    record_start = lseek(fd, sizeof(int), SEEK_CUR);
+    if(-1 == record_start){
+        goto cleanup;
+    }
+
+    for(i=0; i<num_of_record_fields; i++){
+        error_check = lseek(fd, record_start + record_fields[i].record_num*record_len + record_fields[i].record_field_offset, SEEK_SET);
+        if(-1 == error_check){
+            total_bytes_written = -1;
+            goto cleanup;
+        }
+
+        bytes_written = write(fd, record_fields[i].data, record_fields[i].data_len);
+        if(-1 == bytes_written){
+            total_bytes_written = -1;
+            goto cleanup;
+        }
+
+        total_bytes_written += bytes_written;
+    }
+
+cleanup:
+    return total_bytes_written;
+}

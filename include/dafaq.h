@@ -90,6 +90,7 @@ bool check_extension(char * table_name);
 bool check_input_mask(char * input_mask);
 int valid_input(char * input, char * input_mask);
 int get_len_of_record(int fd, bool preserve_offset);
+int write_record_fields(int fd, int num_of_record_fields, record_field * record_fields, bool preserver_offset);
 
 //Edit data
 int switch_field(char * file_name, char * field_name, int data_size, char * input_mask, int field_num);

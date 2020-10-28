@@ -221,19 +221,20 @@ cleanup:
 /**
  * @brief: Converts a byte array of numbers to a string
  * @param[IN] number_data: The byte array housing the numbers
- * @param[OUT] string: The string that will house the text-form numbers (cannot be NULL)
+ * @param[OUT] string: A pointer to the string that will house the text-form numbers
  * @param[IN] num_of_numbers: The number of numbers in the byte array
  * @param[IN] num_len: The number of bytes each number consists of (4 for int, 1 for char)
  * 
  * @return: The length of the new string
  * @notes: For some reason I didn't make it so that string can be NULL, but I might change that later
  */
-int ntos(IN char * number_data, OUT char * string, IN int num_of_numbers, IN int num_len){
+int ntos(IN char * number_data, OUT char ** string, IN int num_of_numbers, IN int num_len){
     char byte_num = 0;
     int int_num = 0;
     int error_check = 0;
     int string_len = 0;
     int i = 0;
+    char temp_string[BUFFER_SIZE] = {0};
     
     if(num_len != sizeof(int) && num_len != sizeof(char)){
         printf("NTOS: num_len must be of size 4 or 1 (int or char)\n");
@@ -249,10 +250,9 @@ int ntos(IN char * number_data, OUT char * string, IN int num_of_numbers, IN int
                string_len++;
             }
             else{
-               string_len += floor(log10(byte_num)+1);
+               string_len += floor(log10(int_num)+1);
             }
-            
-            sprintf(string, "%s%i", string, int_num);
+            sprintf(temp_string, "%s%i", temp_string, int_num);
         }
         else{
             memcpy(&byte_num, number_data+i, num_len);
@@ -264,9 +264,22 @@ int ntos(IN char * number_data, OUT char * string, IN int num_of_numbers, IN int
                string_len += floor(log10(byte_num)+1);
             }
 
-            sprintf(string, "%s%i", string, byte_num);
+            sprintf(temp_string, "%s%i", temp_string, byte_num);
         }
     }
+
+    if(NULL != *string){
+        free(*string);
+    }
+    *string = malloc(string_len+1);
+    if(NULL == *string){
+        perror("NTOS: Malloc error");
+        string_len = -1;
+        goto cleanup;
+    }
+    
+    memcpy(*string, temp_string, string_len);
+    (*string)[string_len] = 0;
 
 cleanup:
     return string_len;

@@ -1,47 +1,39 @@
 #include "dafaq.h"
 
-/** 
- * @brief: Replaces or appends a new field to the table file
- * @param[IN] file_name: The name of the table file
- * @param[IN] field_name: The name of the field to add or append
- * @param[IN] data_type: The data type of the (new) field
- * @param[IN] input_mask: A string that denotes the input mask of the field (see details/Usage.md for more information)
- * @param[IN] field_num: The index of the field
- * 
- * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
- * @notes: An input of field_num = -1 will append the field instead of switching an existing one. An input of 
- *         field_name = NULL will retain the field's old name, an input of data_type = 0 will retain the field's
- *         old data type, and an input of input_mask = NULL will retain the field's old input_mask. These cannot be
- *         input as such if field_num = -1.
- */
 error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data_type, IN char * input_mask, IN int field_num){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
-    int error_check = -1;
-    int i = 0;
-    int record = 0;     //For iterating over records
-    int current_field = 0;      //For iterating over fields in a record
-    int name_len = 0;
     int fd = -1;
     int new_fd = -1;
     int num_of_fields = 0;
     int num_of_records = 0;
-    int record_data_length = 0;
     int original_num_of_fields = 0;
-    int record_offset = 0;
-    bool copy = true;
-    bool is_new_field = false;
-    off_t offset = 0;
-    field new_field = {0};
-    char * del_name = "del_file.dfq";
-    char * record_data = NULL;
-    char temp_data[STRING_LEN] = {0};    //For record data where the field has changed
+    int error_check = 0;
+    int i = 0;
+    int j = 0;
+    int data_offset = 0;
+    int temp_data = 0;
+    bool valid = false;
+    bool new_file = true;
+    bool new_field = false;
+    bool can_free = false;
+    bool can_free_input_mask = false;
+    char * del_name = "del_file";
     field * fields = NULL;
     field * old_fields = NULL;
+    record_field old_record_field = {0};
+    record_field new_record_field = {0};
 
     fd = open(file_name, O_RDWR);
     if(-1 == fd){
         perror("SWITCH_FIELD: Open error");
         return_value = ERROR_CODE_COULDNT_OPEN;
+        goto cleanup;
+    }
+
+    valid = check_magic(fd, false);
+    if(!valid){
+        print_color("~~INVALID FILE~\n", RED, BOLD, RESET);
+        return_value = ERROR_CODE_INVALID_FILE;
         goto cleanup;
     }
 
@@ -51,85 +43,90 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
         goto cleanup;
     }
 
-    fields = malloc(num_of_fields * sizeof(field));
-    if(NULL == fields){
-        perror("Malloc error");
-        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
-        goto cleanup;
-    }
-    memcpy(fields, old_fields, num_of_fields*sizeof(field));
     original_num_of_fields = num_of_fields;
-    
+
     num_of_records = get_num_of_records(fd, num_of_fields, false);
     if(-1 == num_of_records){
-        print_color("~~COULDNT GET NUMBER OF RECRODS~\n", RED, BOLD, RESET);
         return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
         goto cleanup;
     }
 
-    if(-1 == field_num || field_num >= num_of_fields){        //An input of field_num = -1 means the user wants to append a new field
+    if(-1 == field_num || field_num >= num_of_fields){
         field_num = num_of_fields;
         num_of_fields++;
-        is_new_field = true;
+        new_field = true;
+
         if(0 == data_type || NULL == field_name){
             print_color("~~MUST SPECIFY FIELD METADATA FOR AN APPENDING FIELD~\n", B_RED, BOLD, RESET);
             return_value = ERROR_CODE_INVALID_INPUT;
             goto cleanup;
         }
     }
-    if(0 == data_type){     //An input of data_type = 0 means the user would like to retain the data size
-        data_type = fields[field_num].data_len;
-        copy = false;
+    if(0 == data_type){
+        data_type = old_fields[field_num].data_len;
+        new_file = false;
     }
-    if(NULL == field_name){    //An input of field_name = NULL means the user would like to retain the field name
-        field_name = fields[field_num].name;
+    if(NULL == field_name){
+        field_name = old_fields[field_num].name;
     }
     if(NULL == input_mask){
-        if(-1 != field_num){
-            input_mask = fields[field_num].input_mask;
+        if(STRING == data_type && !new_field){
+            input_mask = old_fields[field_num].input_mask;
+        }
+        else{
+            input_mask = malloc(NAME_LEN);
+            if(NULL == input_mask){
+                perror("SWITCH_FIELD: Malloc error");
+                return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+                goto cleanup;
+            }
+            can_free_input_mask = true;
+            memset(input_mask, 0, NAME_LEN);
         }
     }
 
-    fields = realloc(fields, num_of_fields*sizeof(field));
-    memset(fields[field_num].name, 0, NAME_LEN);
-    memcpy(fields[field_num].name, field_name, strnlen(field_name, NAME_LEN));
-    if(NULL != input_mask){
-        memcpy(fields[field_num].input_mask, input_mask, strnlen(input_mask, NAME_LEN));
+    fields = malloc(num_of_fields * sizeof(field));
+    if(NULL == fields){
+        perror("SWITCH_FIELD: Malloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
     }
-    else{
-        memset(fields[field_num].input_mask, 0, NAME_LEN);
-    }
+
+    memcpy(fields, old_fields, original_num_of_fields*sizeof(field));
+
     fields[field_num].data_len = data_type;
+    memcpy(fields[field_num].name, field_name, NAME_LEN);
+    memcpy(fields[field_num].input_mask, input_mask, NAME_LEN);
 
 
-    //This is where the magic happens
 
-    if(0 == num_of_records || !copy){        //If there are no records present or no data_types are to be changed, the file does not need to be rerwitten.
-        offset = lseek(fd, magic_len, SEEK_SET);      //Seek to the integer that corresponds to the number of fields
-        if(-1 == offset){
-            perror("Lseek error");
+    if(0 == num_of_records){
+        new_file = false;
+    }
+
+    if(!new_file){
+        error_check = lseek(fd, magic_len, SEEK_SET);
+        if(-1 == error_check){
+            perror("SWITCH_FIELD: Lseek error");
             return_value = ERROR_CODE_COULDNT_LSEEK;
             goto cleanup;
         }
 
-        error_check = write(fd, &num_of_fields, sizeof(num_of_fields));     //Rewrite the number of fields
+        error_check = write(fd, &num_of_fields, sizeof(num_of_fields));
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        error_check = write(fd, fields, num_of_fields*sizeof(field));   /*  Possibly not the best method for making a change to a large 
-                                                                         *  numbers of fields,but the simplest when dealing with the 
-                                                                         *  possibility of a rewrite.   
-                                                                         */
+        error_check = write(fd, fields, num_of_fields * sizeof(field));
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        if(field_num == num_of_fields-1){     //If field is at end
+        if(new_field){       //Last field
             error_check = write(fd, &num_of_records, sizeof(num_of_records));
             if(-1 == error_check){
                 perror("Write error");
@@ -138,156 +135,169 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
             }
         }
     }
-    else{       //Must rewrite file
-        for(i=0; i<num_of_fields; i++){     //Get the length each record by finding the sum of the data_len fields in the field structures
-            record_data_length += fields[i].data_len;
-        }
-        record_data = malloc(record_data_length);
-        
-        error_check = rename(file_name, del_name);      /*  Rename current file in order to create new one of the original name.
-                                                         *  This file (the original) will be deleted in the end. */
+    else{
+        error_check = rename(file_name, del_name);
         if(-1 == error_check){
-            perror("Rename error");
+            perror("SWITCH_FIELD: Rename error");
             return_value = ERROR_CODE_COULDNT_RENAME;
             goto cleanup;
         }
 
-        new_fd = open(file_name, O_WRONLY | O_CREAT, 0666);     //Open new file
+        new_fd = open(file_name, O_RDWR | O_CREAT, 0666);
         if(-1 == new_fd){
-            perror("Open error");
+            perror("SWITCH FIELD: Open error");
             return_value = ERROR_CODE_COULDNT_OPEN;
             goto cleanup;
         }
 
-        error_check = write(new_fd, magic, magic_len);      //Write the magic sequence to the new file
+        error_check = truncate(file_name, 0);
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Truncate error");
+            return_value = ERROR_CODE_COULDNT_TRUNCATE;
+            goto cleanup;
+        }
+
+        error_check = write(new_fd, magic, magic_len);
+        if(-1 == error_check){
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        error_check = write(new_fd, &num_of_fields, sizeof(num_of_fields));     //Write the number of fields to the new file
+        error_check = write(new_fd, &num_of_fields, sizeof(num_of_fields));
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        error_check = write(new_fd, fields, num_of_fields * sizeof(field));     //Write the fields to the new file
+        error_check = write(new_fd, fields, num_of_fields * sizeof(field));
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        error_check = write(new_fd, &num_of_records, sizeof(num_of_records));     //Write the number of records to the file ( * )
+        error_check = write(new_fd, &num_of_records, sizeof(num_of_records));
         if(-1 == error_check){
-            perror("Write error");
+            perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
             goto cleanup;
         }
 
-        error_check = lseek(fd, magic_len+sizeof(num_of_fields)+original_num_of_fields*sizeof(field)+sizeof(num_of_records), SEEK_SET);    /*
-                                                                        * Seek to records in original file */
-        if(-1 == error_check){
-            perror("Lseek error");
-            return_value = ERROR_CODE_COULDNT_LSEEK;
-            goto cleanup;
-        }
+        for(i=0; i<num_of_records; i++){
+            data_offset = 0;
+            for(j=0; j<original_num_of_fields; j++){
+                if(NULL != old_record_field.data){
+                    free(old_record_field.data);
+                    old_record_field.data = NULL;
+                }
+                error_check = get_record_field(fd, &old_record_field, i, j, false);
+                if(ERROR_CODE_SUCCESS != error_check){
+                    goto cleanup;
+                }
+                new_record_field.data_len = fields[j].data_len;
+                new_record_field.field_index = j;
+                new_record_field.record_num = i;
+                if(can_free){
+                    free(new_record_field.data);
+                }
+                new_record_field.data = NULL;
+                can_free = false;
 
-        for(record=0; record<num_of_records; record++){
-            memset(record_data, 0, record_data_length);
-            for(current_field=0; current_field<num_of_fields; current_field++){
-                memset(temp_data, 0, STRING_LEN);
+                if(j == field_num){
+                    switch(fields[field_num].data_len){
+                        case STRING:
+                            if(INT == old_fields[field_num].data_len || CHAR == old_fields[field_num].data_len){
+                                ntos(old_record_field.data, &(new_record_field.data), 1, old_fields[field_num].data_len);
+                                can_free = true;
+                            }
+                            else{
+                                new_record_field.data = old_record_field.data;
+                            }
+                            break;
 
-                if(current_field != field_num){
-                    error_check = read(fd, record_data+record_offset, fields[current_field].data_len);
-                    if(-1 == error_check){
-                        perror("Read error");
-                        return_value = ERROR_CODE_COULDNT_READ;
-                        goto cleanup;
+                        case INT:
+                            switch(old_fields[field_num].data_len){
+                                case STRING:
+                                    temp_data = (int)strtol(old_record_field.data, NULL, 10);
+                                    new_record_field.data = (char *)&temp_data;
+                                    break;
+                                case INT:
+                                    new_record_field.data = old_record_field.data;
+                                    break;
+                                case CHAR:
+                                    new_record_field.data = (char *)old_record_field.data;
+                                    break;
+                            }
+                            break;
+                        
+                        case CHAR:
+                            switch(old_fields[field_num].data_len){
+                                case STRING:
+                                    temp_data = strtol(old_record_field.data, NULL, 10);
+                                    new_record_field.data = (char *)&temp_data;
+                                    break;
+                                case INT:
+                                    new_record_field.data = (char *)old_record_field.data;
+                                    break;
+                                case CHAR:
+                                    new_record_field.data = old_record_field.data;
+                                    break;
+                            }
+                            break;
                     }
+                    
                 }
                 else{
-                    error_check = read(fd, temp_data, old_fields[current_field].data_len);
-                    if(-1 == error_check){
-                        perror("Read error");
-                        return_value = ERROR_CODE_COULDNT_READ;
-                        goto cleanup;
-                    }
-
-                    if(!is_new_field){
-                        switch(fields[current_field].data_len){
-                            case STRING:
-                                switch(old_fields[current_field].data_len){     
-                                    case STRING:
-                                        memcpy(record_data+record_offset, temp_data, STRING_LEN);
-                                        break;
-                                    case INT:
-                                        error_check = ntos((char *)temp_data, record_data+record_offset, 1, INT);
-                                        if(-1 == error_check){
-                                            goto cleanup;
-                                        }
-                                        memset(record_data+record_offset+INT, 0, STRING-INT);
-                                        break;
-                                    case CHAR:
-                                        error_check = ntos((char *)temp_data, record_data+record_offset, 1, CHAR);
-                                        if(-1 == error_check){
-                                            goto cleanup;
-                                        }
-                                        memset(record_data+record_offset+CHAR, 0, STRING-CHAR);
-                                        break;
-                                    default:
-                                        print_color("~~INVALID DATA TYPE~\n", B_RED, BOLD, RESET);
-                                        return_value = ERROR_CODE_INVALID_DATATYPE;
-                                        goto cleanup;
-                                }
-
-                                break;
-                            case INT:
-                                i = (int)strtol(temp_data, NULL, 10);
-                                memcpy(record_data+record_offset, &i, sizeof(i));
-                                break;
-                            case 1:
-                                i = temp_data[0];
-                                memcpy(record_data+record_offset, &i, 1);   //This will not work for BIG-ENDIAN systems
-                                break;
-                            default:
-                                print_color("~~ERROR: INVALID DATA TYPE~\n", BOLD, B_RED, RESET);
-                                return_value = ERROR_CODE_INVALID_DATATYPE;
-                                goto cleanup;
-                        }
-                    }
-                    else{
-                        memset(record_data+record_offset, 0, data_type);
-                    }
+                    new_record_field = old_record_field;
                 }
-                record_offset += fields[current_field].data_len;
+
+                new_record_field.record_field_offset = data_offset;
+                data_offset += new_record_field.data_len;
+                
+                write_record_fields(new_fd, 1, &new_record_field, false);
+                //getchar();
             }
-            error_check = write(new_fd, record_data, record_data_length);
-            if(-1 == error_check){
-                perror("Write error");
-                return_value = ERROR_CODE_COULDNT_WRITE;
-                goto cleanup;
+
+            if(new_field){
+                new_record_field.record_field_offset = data_offset;
+                new_record_field.data_len = fields[j].data_len;
+                new_record_field.field_index = field_num;
+                new_record_field.record_num = i;
+
+                new_record_field.data = malloc(new_record_field.data_len);
+                if(NULL == new_record_field.data){
+                    perror("SWITCH_FIELD: Malloc error");
+                    return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+                    goto cleanup;
+                }
+                memset(new_record_field.data, 0, new_record_field.data_len);
+                can_free = true;
+
+                write_record_fields(new_fd, 1, &new_record_field, false);
             }
         }
-
-        remove(del_name);
     }
 
     return_value = ERROR_CODE_SUCCESS;
 
 cleanup:
-    if(-1 != fd)
-        close(fd);
-    if(-1 != new_fd)
-        close(new_fd);
-    if(record_data)
-        free(record_data);
-    if(fields)
+    if(NULL != fields){
         free(fields);
-    if(old_fields)
+    }
+    if(NULL != old_fields){
         free(old_fields);
+    }
+    if(NULL != new_record_field.data){
+        free(new_record_field.data);
+    }
+    if(NULL != old_record_field.data){
+        free(old_record_field.data);
+    }
+    if(can_free_input_mask){
+        free(input_mask);
+    }
     return return_value;
 }
 

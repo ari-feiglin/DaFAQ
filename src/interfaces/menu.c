@@ -107,7 +107,7 @@ void print_title(IN int row_length){
 int sprint_menu(IN int cursor_pos){
     int row_len = 75;
 
-    system("clear");
+    //system("clear");
     
     print_title(75);
 
@@ -342,7 +342,7 @@ error_code_t click_handler(int cursor_pos){
     bool continue_loop = true;
     int row_len = 75;
 
-    system("clear");
+    //system("clear");
     if(cursor_pos > 7){
         row_len = 150;
     }
