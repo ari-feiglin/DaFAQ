@@ -9,13 +9,14 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 ## <ins>**Version 0.4.0**</ins>
 <ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.4.0 (v0.4.1) was released October 27, 2020
+Version 0.4.2 (v0.4.2) was released October 28, 2020
 
-### <ins>**v0.4.1 CHANGES:**</ins>
-A list of features added in version 0.4.0
+### <ins>**v0.4 CHANGES:**</ins>
+A list of features added in version 0.4
 * Even more bughunts... ( :( )
 * Interfaces are now integrated into the "GUI" (Not all error messages will be printed properly. Only the ones that come from interfaces are. I'm uncertain if this will change. If I do change it, error messages will look weird for people calling the functions without interfaces.)
 * Changed project structure
+* Fixed a bug that messed up changes in datatypes of existing records when a field is changed
 
 ### <ins>**USAGE:** </ins>
 
@@ -24,6 +25,7 @@ A list of features added in version 0.4.0
 * **create_table** - gets an array of fields and the number of fields as input and creates a table file. This will delete any other file with the same name.
 * **switch_field** - edits a field in a table (changes name and/or data type). This should be a safe function, as it should update all of the records in the table too. An input of field_num = -1 adds appends a field, an input of data_size = 0 does keeps the size of the field that is being switched, an input of field_name = NULL preserves the field being switched's name.
 * **switch_record** - writes a record to the table at the desired location. An input of record_num = -1 appends the record, and any attempt to switch a record past the end of the table appends the record, too. 
+* **write_record_fields** - writes given record fields to a given file. It will be implemented more later.
 
 **Table Navigation Functions:**
 * **get_num_of_fields** - returns the number of fields in a table (mostly used by get_fields)
@@ -88,7 +90,7 @@ Here are some of my ideas for the future:
 * An API for Java?
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.4.1) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.4.2) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 

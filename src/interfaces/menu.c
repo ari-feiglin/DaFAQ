@@ -107,9 +107,13 @@ void print_title(IN int row_length){
 int sprint_menu(IN int cursor_pos){
     int row_len = 75;
 
-    //system("clear");
+    system("clear");
     
     print_title(75);
+    print_indent_line(2, row_len, true, 0,200,255);
+    print_color("`\n~", RESET, BG,0,0,0);
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~\n", RESET);
 
     print_indent_line(1, row_len, true, 0,200,255);
     if(0 != cursor_pos){
@@ -278,6 +282,11 @@ void print_about(IN int row_len){
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("`  ~Hopefully in the future this will become ~almost~`~ useless. Hopefully one day this will actually function well. Hopefully.~\n", BG,0,0,0, BOLD, ITALIC, RESET, BG,0,0,0, BOLD, RESET);
+
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~\n", RESET);
+    print_indent_line(2, row_len, true, 0,200,255);
+    print_color("`\n~", RESET, BG,0,0,0);
 }
 
 /**
@@ -328,6 +337,11 @@ void print_credits(IN int row_len){
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("`  ~* And everyone else who has helped me with this project.~\n", BG,0,0,0, BOLD, RESET);
+
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~\n", RESET);
+    print_indent_line(2, row_len, true, 0,200,255);
+    print_color("`\n~", RESET, BG,0,0,0);
 }
 
 /**
@@ -341,8 +355,9 @@ error_code_t click_handler(int cursor_pos){
     char quit = 0;
     bool continue_loop = true;
     int row_len = 75;
+    int difference = 0;
 
-    //system("clear");
+    system("clear");
     if(cursor_pos > 7){
         row_len = 150;
     }
@@ -362,6 +377,16 @@ error_code_t click_handler(int cursor_pos){
                 goto cleanup;
             }
 
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                break;
+            }
+
             error_check = create_database(input);
             /*if(ERROR_CODE_SUCCESS != error_check){
                 goto cleanup;
@@ -379,6 +404,12 @@ error_code_t click_handler(int cursor_pos){
             error_check = get_raw_input(NULL, &input);
             if(-1 == error_check){
                 goto cleanup;
+            }
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
             }
 
             print_indent_line(1, row_len, true, 0,200,255);
@@ -403,6 +434,12 @@ error_code_t click_handler(int cursor_pos){
                 goto cleanup;
             }
 
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
+            }
+
             print_indent_line(1, row_len, true, 0,200,255);
             print_color("~\n", RESET);
             print_indent_line(2, row_len, true, 0,200,255);
@@ -423,6 +460,12 @@ error_code_t click_handler(int cursor_pos){
             error_check = get_raw_input(NULL, &input);
             if(-1 == error_check){
                 goto cleanup;
+            }
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
             }
 
             print_indent_line(1, row_len, true, 0,200,255);
@@ -447,6 +490,12 @@ error_code_t click_handler(int cursor_pos){
                 goto cleanup;
             }
 
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
+            }
+
             print_indent_line(1, row_len, true, 0,200,255);
             print_color("~\n", RESET);
             print_indent_line(2, row_len, true, 0,200,255);
@@ -467,6 +516,12 @@ error_code_t click_handler(int cursor_pos){
             error_check = get_raw_input(NULL, &input);
             if(-1 == error_check){
                 goto cleanup;
+            }
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
             }
 
             print_indent_line(1, row_len, true, 0,200,255);
@@ -496,6 +551,12 @@ error_code_t click_handler(int cursor_pos){
             error_check = get_raw_input(NULL, &input);
             if(-1 == error_check){
                 goto cleanup;
+            }
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                error_check = ERROR_CODE_SUCCESS;
+                break;
             }
 
             if(NULL != sort_file){
@@ -538,10 +599,18 @@ error_code_t click_handler(int cursor_pos){
         case 10:
             print_indent_line(1, row_len, true, 0,200,255);
             print_color("`  ~~Unavailable at the moment. Read the README, details/Usage, and docstrings~\n", BG,0,0,0, RED, BOLD, RESET);
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+            print_indent_line(2, row_len, true, 0,200,255);
+            print_color("`\n~", RESET, BG,0,0,0);
             break;
 
         default:
             print_color("`  ~~ERROR! Non-existent button!~\n", BG,0,0,0, RED, BOLD, RESET);
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~\n", RESET);
+            print_indent_line(2, row_len, true, 0,200,255);
+            print_color("`\n~", RESET, BG,0,0,0);
             break;
     }
 

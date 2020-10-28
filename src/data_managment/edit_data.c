@@ -1,5 +1,16 @@
 #include "dafaq.h"
 
+/**
+ * @brief: Edits or appends a field to a table
+ * @param[IN] file_name: The name of the table file
+ * @param[IN] field_name: The new name of the field (or NULL to keep the name)
+ * @param[IN] datatype: Data size of the field (or 0 to keep the datatype)
+ * @param[IN] input_mask: The input mask of the field (NULL to keep the input mask). If the field is not a
+ *            a string, it is ignored.
+ * @param[IN] field_num: The index of the field to change.
+ * 
+ * @returns: ERROR_CODE_SUCCESS on succes, else an indicative error code
+ */
 error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data_type, IN char * input_mask, IN int field_num){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int fd = -1;
@@ -69,21 +80,19 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     if(NULL == field_name){
         field_name = old_fields[field_num].name;
     }
-    if(NULL == input_mask){
-        if(STRING == data_type && !new_field){
-            input_mask = old_fields[field_num].input_mask;
-        }
-        else{
-            input_mask = malloc(NAME_LEN);
-            if(NULL == input_mask){
-                perror("SWITCH_FIELD: Malloc error");
-                return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
-                goto cleanup;
-            }
-            can_free_input_mask = true;
-            memset(input_mask, 0, NAME_LEN);
-        }
+    if(NULL == input_mask && STRING == data_type && !new_field){
+        input_mask = old_fields[field_num].input_mask;
     }
+    else{
+        input_mask = malloc(NAME_LEN);
+        if(NULL == input_mask){
+            perror("SWITCH_FIELD: Malloc error");
+            return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+            goto cleanup;
+        }
+        can_free_input_mask = true;
+        memset(input_mask, 0, NAME_LEN);
+        }
 
     fields = malloc(num_of_fields * sizeof(field));
     if(NULL == fields){
@@ -278,6 +287,8 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
                 write_record_fields(new_fd, 1, &new_record_field, false);
             }
         }
+
+        remove(del_name);
     }
 
     return_value = ERROR_CODE_SUCCESS;
