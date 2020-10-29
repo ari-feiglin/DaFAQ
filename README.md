@@ -7,15 +7,16 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.4.2**</ins>
+## <ins>**Version 0.4.3**</ins>
 <ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.4.2 (v0.4.2) was released October 29, 2020
+Version 0.4.3 (v0.4.3) was released October 29, 2020
 
 ### <ins>**v0.4 CHANGES:**</ins>
 A list of features added in version 0.4
 * A bug massacre! 
   * Fixed a bug that messed up changes in datatypes of existing records when a field is changed
   * Fixed a bug where the name of fields can be messed up.
+  * Fixed a bug messing up input masks of tables.
   * And a few more...
 * Interfaces are now integrated into the "GUI" (Not all error messages will be printed properly. Only the ones that come from interfaces are. I'm uncertain if this will change. If I do change it, error messages will look weird for people calling the functions without interfaces.)
 * Changed project structure
@@ -95,7 +96,7 @@ Here are some of my ideas for the future:
 * An API for Java?
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.4.2) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.4.3) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 
