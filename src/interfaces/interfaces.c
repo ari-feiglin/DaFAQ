@@ -72,6 +72,7 @@ int create_table_interface(IN char * table_name){
             num_of_fields = -1;
             goto cleanup;
         }
+        memset(fields + num_of_fields*sizeof(field), 0, sizeof(field));
 
         if(NULL != field_data_type){
             free(field_data_type);
@@ -92,6 +93,7 @@ int create_table_interface(IN char * table_name){
         lower(field_data_type, 0);
 
         memset(new_field.name, 0, NAME_LEN);
+        memset(new_field.input_mask, 0, NAME_LEN);
         strncpy(new_field.name, field_name, strnlen(field_name, NAME_LEN));
 
         difference = strncmp(field_data_type, "char", STRING_LEN);
@@ -127,7 +129,7 @@ int create_table_interface(IN char * table_name){
                     valid = true;
                 }
                 else{
-                    memcpy(fields[num_of_fields].input_mask, input_mask, bytes_returned);
+                    memcpy(new_field.input_mask, input_mask, bytes_returned);
                 }
             }
         }
@@ -141,6 +143,7 @@ int create_table_interface(IN char * table_name){
         if(valid){
             fields[num_of_fields].data_len = new_field.data_len;
             memcpy(fields[num_of_fields].name, new_field.name, NAME_LEN);
+            memcpy(fields[num_of_fields].input_mask, new_field.input_mask, NAME_LEN);
             num_of_fields++;
         }
         else{

@@ -408,6 +408,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
@@ -436,6 +440,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
@@ -464,6 +472,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
@@ -492,6 +504,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
@@ -520,6 +536,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
@@ -566,6 +586,10 @@ error_code_t click_handler(int cursor_pos){
 
             difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
+                print_indent_line(2, row_len, true, 0,200,255);
+                print_color("~\n", RESET);
                 error_check = ERROR_CODE_SUCCESS;
                 break;
             }
