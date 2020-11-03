@@ -7,9 +7,9 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.4.3**</ins>
+## <ins>**Version 0.4.4**</ins>
 <ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.4.3 (v0.4.3) was released October 29, 2020
+Version 0.4.4 (v0.4.4) was released November 3, 2020
 
 ### <ins>**v0.4 CHANGES:**</ins>
 A list of features added in version 0.4
@@ -21,6 +21,7 @@ A list of features added in version 0.4
 * Interfaces are now integrated into the "GUI" (Not all error messages will be printed properly. Only the ones that come from interfaces are. I'm uncertain if this will change. If I do change it, error messages will look weird for people calling the functions without interfaces.)
 * Changed project structure
 * Added usage on how to use the interfaces
+* Added CColor to the source code instead of having to rely on the library.
 
 ### <ins>**USAGE:** </ins>
 
@@ -86,7 +87,8 @@ As you can see, this project is split into a couple of directories:
 
 ### <ins>**The CColor Library:**</ins>  
 In order to print colored text, I used the CColor library that I wrote. Here is a link to the remote github repository where its source code can be found, along with a shared object file: https://github.com/ari-feiglin/CColor  
-A README containing all relevant information on its usage is provided there.
+A README containing all relevant information on its usage is provided there. 
+**As of v0.4.4, it is not necessary to download this library, it is provided in the source code.**
 
 ### <ins>**THE FUTURE/GOALS:** </ins>
 Here are some of my ideas for the future:
@@ -96,7 +98,7 @@ Here are some of my ideas for the future:
 * An API for Java?
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.4.3) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.4.4) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 
