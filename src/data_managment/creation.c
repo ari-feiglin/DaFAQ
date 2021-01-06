@@ -77,7 +77,7 @@ cleanup:
  * @return: ERROR_CODE_SUCCESS on success, else an indicative error code of type error_code_t
  * @notes: This function will remove any other file with the same name as table_name in the working directory. 
  */
-error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field * fields){
+error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field_t * fields){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int fd = -1;
     int error_check = 0;
@@ -123,7 +123,7 @@ error_code_t create_table(IN char * table_name, IN int num_of_fields, IN field *
         goto cleanup;
     }
 
-    error_check = write(fd, fields, num_of_fields * sizeof(field));
+    error_check = write(fd, fields, num_of_fields * sizeof(field_t));
     if(-1 == error_check){
         print_indent_line(1, row_len, true, 255,0,0);
         print_color("`  ~", BG,0,0,0, RED);

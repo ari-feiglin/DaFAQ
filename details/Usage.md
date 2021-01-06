@@ -60,7 +60,9 @@ Queries can be executed by calling the query_interface command or binary_search_
 **Usage of query_interface:**
 When running the query_interface function, you will have to input the following:
 * The Field Name of the field you would like to put a filter on
-* The Target Data, the data that you are basing you filter on
+* Whether the target data is a field or numerical value.
+  * If a numberical value, the numerical value (the data that you are basing you filter on)
+  * If a field, the field name of the field you are basing your filter on)
 * The Operation, which is one of:
   * `==` - equal to
   * `!=` - not equal to
@@ -72,9 +74,11 @@ When running the query_interface function, you will have to input the following:
   The condition is:  
   `$(Field Name) $(Operation) $(Target Data)`, so for instance, if:  
   `Field Name: ` Field 1  
+  `Value: `
   `Target Data: ` 314  
   `Operator: ` <=  
   Then the query will print every record where the field whose name is "Field 1" has a value of equal to or less than 314 (eg. 0, 300, 278).
+  Here's another
 
 ### **INPUT MASKS:** <br />
 An input mask is a series of characters (a string, if you will) that denotes how input must be given to a field. <br />

@@ -79,7 +79,7 @@ int get_num_of_fields(IN int fd, IN bool preserve_offset){
 
     old_offset = lseek(fd, 0, SEEK_CUR);
     if(-1 == old_offset){
-        perror("Lseek error");
+        perror("GET_NUM_OF_FIELDS: Lseek error");
         goto cleanup;
     }
 
@@ -90,7 +90,7 @@ int get_num_of_fields(IN int fd, IN bool preserve_offset){
 
     error_check = read(fd, &num_of_fields, sizeof(num_of_fields));
     if(-1 == error_check){
-        perror("read error");
+        perror("GET_NUM_OF_FIELDS: Read error");
         num_of_fields = -1;
         goto cleanup;
     }
@@ -98,7 +98,7 @@ int get_num_of_fields(IN int fd, IN bool preserve_offset){
     if(preserve_offset){
         old_offset = lseek(fd, old_offset, SEEK_SET);
         if(-1 == old_offset){
-            perror("Lseek error");
+            perror("GET_NUM_OF_FIELDS: Lseek error");
             num_of_fields = -1;
             goto cleanup;
         }
@@ -106,6 +106,38 @@ int get_num_of_fields(IN int fd, IN bool preserve_offset){
 
 cleanup:
     return num_of_fields;
+}
+
+/**
+ * @brief: Gets a field from a table
+ * @param[IN] fd: The file descriptor of the table file
+ * @param[IN] target_field: The field to fill out
+ * @param[IN] field_index: The index of the field to get
+ * 
+ * @returns: SUCCESS on success, else an indicative error code
+ */
+error_code_t get_field(IN int fd, field_t * target_field, int field_index){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int error_check = 0;
+
+    error_check = lseek(fd, magic_len + sizeof(int) + field_index * sizeof(field_t), SEEK_SET);
+    if(-1 == error_check){
+        perror("GET_FIELD: Lseek error");
+        return_value = ERROR_CODE_COULDNT_LSEEK;
+        goto cleanup;
+    }
+
+    error_check = read(fd, target_field, sizeof(field_t));
+    if(-1 == error_check){
+        perror("GET_FIELD: Read error");
+        return_value = ERROR_CODE_COULDNT_READ;
+        goto cleanup;
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    return return_value;
 }
 
 /**
@@ -117,7 +149,7 @@ cleanup:
  * 
  * @return: On success the number of fields in a file, else -1
  */
-int get_fields(IN int fd, OUT field ** fields, IN bool preserve_offset){
+int get_fields(IN int fd, OUT field_t ** fields, IN bool preserve_offset){
     int num_of_fields = -1;
     int error_check = 0;
     off_t old_offset = 0;
@@ -133,14 +165,14 @@ int get_fields(IN int fd, OUT field ** fields, IN bool preserve_offset){
         goto cleanup;
     }
 
-    *fields = calloc(num_of_fields, sizeof(field));
+    *fields = calloc(num_of_fields, sizeof(field_t));
     if(NULL == *fields){
         perror("Calloc error");
         num_of_fields = -1;
         goto cleanup;
     }
 
-    error_check = read(fd, *fields, num_of_fields*sizeof(field));
+    error_check = read(fd, *fields, num_of_fields*sizeof(field_t));
     if(-1 == error_check){
         perror("Read error");
         num_of_fields = -1;
@@ -190,7 +222,7 @@ int get_num_of_records(IN int fd, IN int num_of_fields, IN bool preserve_offset)
         goto cleanup;
     }
 
-    offset = lseek(fd, magic_len+ sizeof(num_of_fields)+ num_of_fields*sizeof(field), SEEK_SET);     //Seeks to num_of_records
+    offset = lseek(fd, magic_len+ sizeof(num_of_fields)+ num_of_fields*sizeof(field_t), SEEK_SET);     //Seeks to num_of_records
     if(-1 == offset){
         perror("Lseek error");
         goto cleanup;
@@ -232,7 +264,7 @@ int get_len_of_record(IN int fd, IN bool preserve_offset){
     int num_of_fields = 0;
     int i = 0;
     off_t offset = 0;
-    field * fields = NULL;
+    field_t * fields = NULL;
 
     offset = lseek(fd, 0, SEEK_CUR);
     if(-1 == offset){
@@ -460,7 +492,7 @@ cleanup:
     return is_valid;
 }
 
-int write_record_fields(int fd, int num_of_record_fields, record_field * record_fields, bool preserver_offset){
+int write_record_fields(int fd, int num_of_record_fields, record_field_t * record_fields, bool preserver_offset){
     int num_of_fields = 0;
     int record_len = 0;
     int bytes_written = 0;

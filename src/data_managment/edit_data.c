@@ -30,10 +30,10 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
     bool can_free_old_field = false;
     bool can_free_input_mask = false;
     char * del_name = "del_file";
-    field * fields = NULL;
-    field * old_fields = NULL;
-    record_field old_record_field = {0};
-    record_field new_record_field = {0};
+    field_t * fields = NULL;
+    field_t * old_fields = NULL;
+    record_field_t old_record_field = {0};
+    record_field_t new_record_field = {0};
 
     fd = open(file_name, O_RDWR);
     if(-1 == fd){
@@ -103,14 +103,14 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
         memset(input_mask, 0, NAME_LEN);
     }
 
-    fields = malloc(num_of_fields * sizeof(field));
+    fields = malloc(num_of_fields * sizeof(field_t));
     if(NULL == fields){
         perror("SWITCH_FIELD: Malloc error");
         return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
         goto cleanup;
     }
 
-    memcpy(fields, old_fields, original_num_of_fields*sizeof(field));
+    memcpy(fields, old_fields, original_num_of_fields*sizeof(field_t));
     fields[field_num].data_len = data_type;
     memset(fields[field_num].name, 0, NAME_LEN);
     memset(fields[field_num].input_mask, 0, NAME_LEN);
@@ -136,7 +136,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
             goto cleanup;
         }
 
-        error_check = write(fd, fields, num_of_fields * sizeof(field));
+        error_check = write(fd, fields, num_of_fields * sizeof(field_t));
         if(-1 == error_check){
             perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
@@ -188,7 +188,7 @@ error_code_t switch_field(IN char * file_name, IN char * field_name, IN int data
             goto cleanup;
         }
 
-        error_check = write(new_fd, fields, num_of_fields * sizeof(field));
+        error_check = write(new_fd, fields, num_of_fields * sizeof(field_t));
         if(-1 == error_check){
             perror("SWITCH_FIELD: Write error");
             return_value = ERROR_CODE_COULDNT_WRITE;
@@ -353,7 +353,7 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
     int record_offset = 0;
     off_t offset = 0;
     void * data = NULL;
-    field * fields = NULL;
+    field_t * fields = NULL;
 
     is_valid = check_magic(fd, false);
     if(!is_valid){
@@ -408,7 +408,7 @@ int switch_record(IN int fd, IN int record_num, IN int * input_lens, IN char ** 
         
         memcpy(data, record_input[i], input_lens[i]);
 
-        offset = lseek(fd, magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_num*record_len+record_offset, SEEK_SET);
+        offset = lseek(fd, magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field_t) + sizeof(num_of_records) + record_num*record_len+record_offset, SEEK_SET);
         if(-1 == offset){
             perror("Lseek error");
             goto cleanup;

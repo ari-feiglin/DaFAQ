@@ -12,7 +12,7 @@
  * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
  * @notes: target_record_field must already be allocated
  */
-error_code_t get_record_field(IN int fd, OUT record_field * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset){
+error_code_t get_record_field(IN int fd, OUT record_field_t * target_record_field, IN int record_number, IN int field_num, IN bool preserve_offset){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int num_of_fields = 0;
     int num_of_records = 0;
@@ -21,7 +21,7 @@ error_code_t get_record_field(IN int fd, OUT record_field * target_record_field,
     int i = 0;
     off_t offset = 0;
     off_t old_offset = 0;
-    field * fields = NULL;
+    field_t * fields = NULL;
 
     if(NULL == target_record_field){
         print_color("~~Target record_field must already be allocated before being passed to get_record_field!~", RED, BOLD, RESET);
@@ -31,7 +31,7 @@ error_code_t get_record_field(IN int fd, OUT record_field * target_record_field,
 
     old_offset = lseek(fd, 0, SEEK_CUR);
     if(-1 == old_offset){
-        perror("GET_RECORD: Lseek error");
+        perror("GET_RECORD_FIELD: Lseek error");
         return_value = ERROR_CODE_COULDNT_LSEEK;
         goto cleanup;
     }
@@ -58,7 +58,7 @@ error_code_t get_record_field(IN int fd, OUT record_field * target_record_field,
         target_record_field->record_field_offset += fields[i].data_len;
     }
 
-    offset = magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field) + sizeof(num_of_records) + record_number*record_len + target_record_field->record_field_offset;
+    offset = magic_len + sizeof(num_of_fields) + num_of_fields*sizeof(field_t) + sizeof(num_of_records) + record_number*record_len + target_record_field->record_field_offset;
     offset = lseek(fd, offset, SEEK_SET);
     if(-1 == offset){
         perror("GET_RECORD_FIELD: Lseek error");
@@ -89,9 +89,9 @@ cleanup:
  *                             the function was run.
  * 
  * @return: ERROR_CODE_SUCCESS on succes, else an indicative error code of type error_code_t
- * @notes: A record is a collection of record_field structs (see dafaq.h for the struct)
+ * @notes: A record is a collection of record_field structs (see no.h for the struct)
  */
-error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_number, IN bool preserve_offset){
+error_code_t get_record(IN int fd, OUT record_field_t ** record, IN int record_number, IN bool preserve_offset){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int number_of_fields = 0;
     int number_of_records = 0;
@@ -101,7 +101,7 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
     int i = 0;
     off_t offset = 0;
     off_t old_offset = 0;
-    field * fields = NULL;
+    field_t * fields = NULL;
 
     old_offset = lseek(fd, 0, SEEK_CUR);
     if(-1 == old_offset){
@@ -132,7 +132,7 @@ error_code_t get_record(IN int fd, OUT record_field ** record, IN int record_num
         goto cleanup;
     }
 
-    *record = calloc(number_of_fields, sizeof(record_field));
+    *record = calloc(number_of_fields, sizeof(record_field_t));
     if(NULL == *record){
         perror("GET_RECORD: Calloc error");
         return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
@@ -177,7 +177,7 @@ cleanup:
  *         confusing, I know.
  * 
  */
-int get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_offset){
+int get_all_records(IN int fd, OUT record_field_t *** records, IN bool preserve_offset){
     int num_of_fields = 0;
     int num_of_records = -1;
     int i = 0;
@@ -193,7 +193,7 @@ int get_all_records(IN int fd, OUT record_field *** records, IN bool preserve_of
         goto cleanup;
     }
 
-    *records = calloc(num_of_records, sizeof(record_field *));
+    *records = calloc(num_of_records, sizeof(record_field_t *));
     if(NULL == *records){
         perror("GET_ALL_RECORDS: Calloc error");
         num_of_records = -1;
@@ -239,12 +239,12 @@ cleanup:
  *         This is not included in the header file, as it should not be called by anything other than the function 
  *         quicksort_record_fields.
  */
-int partition_record_fields(OUT record_field * record_fields, IN int low, IN int high){
+int partition_record_fields(OUT record_field_t * record_fields, IN int low, IN int high){
     int i = low-1;
     int j = high+1;
     int value = 0;
     int pivot = 0;
-    record_field intermediary;
+    record_field_t intermediary = {0};
 
     pivot = *((int *)(record_fields[(high + low)/2].data));
 
@@ -296,7 +296,7 @@ error_code_t quicksort_record_fields(IN int table_fd, int sort_file_fd, int fiel
     int total_data_len = 0;
     int sp = 0;     //Stack pointer
     int * stack = NULL;
-    record_field * record_fields = NULL;
+    record_field_t * record_fields = NULL;
 
     num_of_fields = get_num_of_fields(table_fd, false);
     if(-1 == num_of_fields){
@@ -346,7 +346,7 @@ error_code_t quicksort_record_fields(IN int table_fd, int sort_file_fd, int fiel
         goto cleanup;
     }
 
-    record_fields = calloc(num_of_records, sizeof(record_field));
+    record_fields = calloc(num_of_records, sizeof(record_field_t));
     if(NULL == record_fields){
         perror("QUICKSORT_RECORD_FIELDS: Calloc error");
         return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
@@ -510,8 +510,11 @@ cleanup:
  *               + < - less than
  *         These are relative to the data in the record's field, then the target (so data < target, not
  *         target < data)
+ * 
+ *         This function has some issues when dealing with data that doesn't exist in tables, but I don't
+ *         want to mess with it right now.
  */
-error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, operators operator, int field_index, bool ** valid_record_indexes){
+error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_data, operator_t operator, int field_index, bool ** valid_record_indexes){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int first_matching_index = 0;
     int current_index = 0;
@@ -526,7 +529,7 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     int high_data = 0;
     int low_data = 0;
     int difference = 0;
-    record_field field = {0};
+    record_field_t field = {0};
     int * record_nums = NULL;
 
     table_num_of_fields = get_num_of_fields(table_fd, false);
@@ -587,7 +590,7 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
         perror("BINARY_SEARCH_SORT_FILE: Calloc error");
         goto cleanup;
     }
-
+    
     error_check = read(sort_fd, record_nums, num_of_records * sizeof(int));
     if(-1 == error_check){
         perror("BINARY_SEARCH_SORT_FILE: Read error");
@@ -689,7 +692,7 @@ error_code_t binary_search_sort_file(int table_fd, int sort_fd, char * target_da
     if(ERROR_CODE_SUCCESS != error_check){
         goto cleanup;
     }
-    
+
     while(current_index > 0){       
         if(NULL != field.data){
             free(field.data);
@@ -807,7 +810,7 @@ cleanup:
  * 
  * @returns: ERROR_CODE_SUCCESS on success, else an indicative error of type error_code_t
  */
-error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * target_data, IN operators operator, IN int field_index, IN int num_of_records, OUT bool ** valid_record_map){
+error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * target_data, IN operator_t operator, IN int field_index, IN int num_of_records, OUT bool ** valid_record_map){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
     int error_check = 0;
 
@@ -818,20 +821,21 @@ error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * tar
             if(ERROR_CODE_OUT_OF_DATE == return_value){
                 error_check = ftruncate(sort_fd, 0);
                 if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Ftruncate error");
+                    printf("SORT FD: %d\n", sort_fd);
+                    perror("GET_VALID_RECORD_MAP: Ftruncate error");
                     return_value = ERROR_CODE_COULDNT_TRUNCATE;
                     goto cleanup;
                 }
                 error_check = lseek(sort_fd, 0, SEEK_SET);
                 if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Lseek error");
+                    perror("GET_VALID_RECORD_MAP: Lseek error");
                     return_value = ERROR_CODE_COULDNT_LSEEK;
                     goto cleanup;
                 }
 
                 error_check = write(sort_fd, &num_of_records, sizeof(num_of_records));
                 if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Write error");
+                    perror("GET_VALID_RECORD_MAP: Write error");
                     return_value = ERROR_CODE_COULDNT_WRITE;
                     goto cleanup;
                 }
@@ -840,7 +844,7 @@ error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * tar
 
                 error_check = write(sort_fd, &error_check, sizeof(error_check));
                 if(-1 == error_check){
-                    perror("QUERY_INTERFACE: Write error");
+                    perror("GET_VALID_RECORD_MAP: Write error");
                     return_value = ERROR_CODE_COULDNT_WRITE;
                     goto cleanup;
                 }
@@ -860,7 +864,7 @@ error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * tar
                 }
             }
             else{
-                print_color("~~OOPS COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
+                print_color("~~COULD NOT EXECUTE QUERY~\n", RED, BOLD, RESET);
                 goto cleanup;
             }
         }
@@ -870,5 +874,352 @@ error_code_t get_valid_record_map(IN int table_fd, IN int sort_fd, IN char * tar
     }
 
 cleanup:
+    return return_value;
+}
+
+/**
+ * @brief: Prints out the result of a queery based on a record and field map
+ * @param[IN] table_fd: The file descriptor of the target table
+ * @param[IN] record_map: A byte map that designates which records are valie
+ * @param[IN] field_map: A byte map that designates which fields were used
+ * 
+ * @returns: SUCCESS on success, else an indicative error code
+ */
+error_code_t print_record_map(IN int table_fd, IN bool * record_map, IN bool * field_map){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int num_of_records = 0;
+    int num_of_fields = 0;
+    int i = 0;
+    int j = 0;
+    char print_data[STRING_LEN + 1] = {0};
+    char * print_text = NULL;
+    field_t * fields = NULL;
+    record_field_t curr_record_field = {0};
+
+    num_of_fields = get_fields(table_fd, &fields, false);
+    if(-1 == num_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_FIELDS;
+        goto cleanup;
+    }
+
+    num_of_records = get_num_of_records(table_fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
+        goto cleanup;
+    }
+
+    puts("");
+    for(i=0; i<num_of_fields; i++){
+        if(field_map[i]){
+            rect_text(fields[i].name, &print_text, NAME_LEN);
+            print_color("~~", BG_B_BLUE, BOLD);
+            printf("%s", print_text);
+            print_color("~ ", RESET);
+        }
+    }
+    puts("");
+
+    for(i=0; i<num_of_records; i++){
+        if(record_map[i]){
+            for(j=0; j<num_of_fields; j++){
+                if(field_map[j]){
+                    if(NULL != curr_record_field.data){
+                        free(curr_record_field.data);
+                    }
+
+                    return_value = get_record_field(table_fd, &curr_record_field, i, j, false);
+                    if(ERROR_CODE_SUCCESS != return_value){
+                        goto cleanup;
+                    }
+
+                    switch(curr_record_field.data_len){
+                        case STRING:
+                            sprintf(print_data, "%s", curr_record_field.data);
+                            break;
+                        case INT:
+                            sprintf(print_data, "%i", *((int *)curr_record_field.data));
+                            break;
+                        case CHAR:
+                            sprintf(print_data, "%i", *((char *)curr_record_field.data));
+                            break;
+
+                        default:    
+                            print_color("~~\nINVALID DATATYPE~\n", RED, BOLD, RESET);
+                            return_value = ERROR_CODE_INVALID_INPUT;
+                            goto cleanup;
+                            break;          //      :)
+                    }
+
+                    rect_text(print_data, &print_text, NAME_LEN);
+                    print_color("~", BG_BLACK);
+                    printf("%s", print_text);
+                    print_color("~ ", RESET);
+                }
+            }
+            puts("");
+        }
+    }
+
+    puts("");
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    if(NULL != fields){
+        free(fields);
+    }
+    if(NULL != print_text){
+        free(print_text);
+    }
+    if(NULL != curr_record_field.data){
+        free(curr_record_field.data);
+    }
+
+    return return_value;
+}
+
+/**
+ * @brief: Executes a query
+ * @param[IN] query: The query's structure
+ * 
+ * @returns: SUCCESS on success, else an indicative error code
+ */
+error_code_t execute_query(IN query_t query, IN char * query_file_name){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    int num_of_fields = 0;
+    int num_of_records = 0;
+    int i = 0;
+    int j = 0;
+    int difference = 0;
+    bool * record_map = NULL;
+    bool * final_record_map = NULL;
+    field_t * fields = NULL;
+    record_field_t record_field = {0};
+    record_field_t target_record_field = {0};
+    
+    num_of_fields = get_fields(query.table_fd, &fields, false);
+    if(-1 == num_of_fields){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_FIELDS;
+        goto cleanup;
+    }
+
+    num_of_records = get_num_of_records(query.table_fd, num_of_fields, false);
+    if(-1 == num_of_records){
+        return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
+        goto cleanup;
+    }
+
+    final_record_map = calloc(num_of_records, sizeof(bool));
+    if(NULL == final_record_map){
+        perror("EXECUTE_QUERY: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+
+    for(i=0; i<query.num_of_conditions; i++){
+        if(NULL != record_map){
+            free(record_map);
+            record_map = NULL;
+        }
+
+        if(INTEGRAL == query.conditions[i].target_id){
+            return_value = get_valid_record_map(query.table_fd, query.sort_fd, query.conditions[i].target.target_data, query.conditions[i].operator, query.conditions[i].field_index, num_of_records, &record_map);
+            if(ERROR_CODE_SUCCESS != return_value){
+                goto cleanup;
+            }
+        }
+        else if(FIELD == query.conditions[i].target_id){
+            if(NULL != record_map){
+                free(record_map);
+                record_map = NULL;
+            }
+            record_map = calloc(num_of_records, sizeof(bool));
+            if(NULL == record_map){
+                perror("EXECUTE_QUERY: Calloc error");
+                return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+                goto cleanup;
+            }
+
+            for(j=0; j<num_of_records; j++){
+                if(NULL != record_field.data){
+                    free(record_field.data);
+                    record_field.data = NULL;
+                }
+                return_value = get_record_field(query.table_fd, &record_field, j, query.conditions[i].field_index, false);
+                if(ERROR_CODE_SUCCESS != return_value){
+                    goto cleanup;
+                }
+
+                if(NULL != target_record_field.data){
+                    free(target_record_field.data);
+                    target_record_field.data = NULL;
+                }
+                return_value = get_record_field(query.table_fd, &target_record_field, j, query.conditions[i].target.target_field_index, false);
+                if(ERROR_CODE_SUCCESS != return_value){
+                    goto cleanup;
+                }
+
+                switch(query.conditions[i].operator){
+                    case EQUALS:
+                        switch(fields[query.conditions[i].field_index].data_len){
+                            case STRING:
+                                if(fields[query.conditions[i].target.target_field_index].data_len != STRING){
+                                    record_map[j] = false;
+                                    break;
+                                }
+                                difference = strncmp(record_field.data, target_record_field.data, STRING_LEN);
+                                if(0 == difference){
+                                    record_map[j] = true;
+                                }
+                                else{
+                                    record_map[j] = false;
+                                }
+
+                            case CHAR:
+                            case INT:
+                                if(record_field.data == target_record_field.data){
+                                    record_map[j] = true;
+                                }
+                                else{
+                                    record_map[j] = false;
+                                }
+
+                            default:
+                                print_color("~~INVALID DATATYPE~\n", RED, BOLD, RESET);
+                                return_value = ERROR_CODE_INVALID_DATATYPE;
+                                goto cleanup;
+                        }
+
+                        break;
+
+                    case NOT_EQUALS:
+                        switch(fields[query.conditions[i].field_index].data_len){
+                            case STRING:
+                                if(fields[query.conditions[i].target.target_field_index].data_len != STRING){
+                                    record_map[j] = false;
+                                    break;
+                                }
+                                difference = strncmp(record_field.data, target_record_field.data, STRING_LEN);
+                                if(0 == difference){
+                                    record_map[j] = false;
+                                }
+                                else{
+                                    record_map[j] = true;
+                                }
+
+                            case CHAR:
+                            case INT:
+                                if(record_field.data == target_record_field.data){
+                                    record_map[j] = false;
+                                }
+                                else{
+                                    record_map[j] = true;
+                                }
+
+                            default:
+                                print_color("~~INVALID DATATYPE~\n", RED, BOLD, RESET);
+                                return_value = ERROR_CODE_INVALID_DATATYPE;
+                                goto cleanup;
+                        }
+
+                        break;
+
+                    case GREATER:
+                        if(*record_field.data > *target_record_field.data){
+                            record_map[j] = true;
+                        }
+                        else{
+                            record_map[j] = false;
+                        }
+
+                        break;
+
+                    case GREATER_OR_EQUALS:
+                        if(*record_field.data >= *target_record_field.data){
+                            record_map[j] = true;
+                        }
+                        else{
+                            record_map[j] = false;
+                        }
+
+                        break;
+                    
+                    case LESS:
+                        if(*record_field.data < *target_record_field.data){
+                            record_map[j] = true;
+                        }
+                        else{
+                            record_map[j] = false;
+                        }
+
+                        break;
+
+                    case LESS_OR_EQUALS:
+                        if(*record_field.data <= *target_record_field.data){
+                            record_map[j] = true;
+                        }
+                        else{
+                            record_map[j] = false;
+                        }
+
+                        break;
+
+                }
+            }
+        }
+
+        if(0 == i){
+            for(j=0; j<num_of_records; j++){
+                final_record_map[j] = record_map[j];
+            }
+            continue;
+        }
+
+        switch(query.conditions[i-1].logical_operator){
+            case AND:
+                for(j=0; j<num_of_records; j++){
+                    final_record_map[j] &= record_map[j];
+                }
+                break;
+
+            case OR:
+                for(j=0; j<num_of_records; j++){
+                    final_record_map[j] |= record_map[j];
+                }
+                break;
+
+            default:
+                print_color("~~INVALID OPERATOR~\n", RED, BOLD, RESET);
+                goto cleanup;
+                break;      //      :)
+        }
+    }
+
+    if(NULL != query_file_name){
+        return_value = write_table(query.table_fd, query_file_name, num_of_fields, query.selected_field_map, num_of_records, final_record_map);
+        if(return_value != ERROR_CODE_SUCCESS){
+            goto cleanup;
+        }
+    }
+
+    return_value = print_record_map(query.table_fd, final_record_map, query.selected_field_map);
+
+cleanup:   
+    if(NULL != record_map){
+        free(record_map);
+    }
+    if(NULL != final_record_map){
+        free(final_record_map);
+    }
+    if(NULL != fields){
+        free(fields);
+    }
+    if(NULL != record_field.data){
+        free(record_field.data);
+    }
+    if(NULL != target_record_field.data){
+        free(target_record_field.data);
+    }
+
     return return_value;
 }

@@ -7,21 +7,16 @@ I have very limited knowledge on Databases and whatnot, so this system is probab
 
 **IMPORTANT NOTE:** The DaFAQ system is built for Linux, and it may not work for other kernels and OSs. Sorry for the inconvenience.
 
-## <ins>**Version 0.4.4**</ins>
-<ins>**v0.4 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
-Version 0.4.4 (v0.4.4) was released November 3, 2020
+## <ins>**Version 0.5.0**</ins>
+<ins>**v0.5 IS NOT COMPATIBLE WITH WITH TABLES MADE WITH v0.0**</ins><br />
+Version 0.5.0 (v0.5.0) was released January 6, 2021
 
-### <ins>**v0.4 CHANGES:**</ins>
-A list of features added in version 0.4
-* A bug massacre! 
-  * Fixed a bug that messed up changes in datatypes of existing records when a field is changed
-  * Fixed a bug where the name of fields can be messed up.
-  * Fixed a bug messing up input masks of tables.
-  * And a few more...
-* Interfaces are now integrated into the "GUI" (Not all error messages will be printed properly. Only the ones that come from interfaces are. I'm uncertain if this will change. If I do change it, error messages will look weird for people calling the functions without interfaces.)
-* Changed project structure
-* Added usage on how to use the interfaces
-* Added CColor to the source code instead of having to rely on the library.
+### <ins>**v0.5 CHANGES:**</ins>
+A list of features added in version 0.5
+* Sperated query interface from query function
+* Added a couple of new functions that simplify the code a bit
+* Added more complicated queries (allowing for a variable number of fields to be selected, multiple conditions, and comparisons between fields in the same table)
+* The query interface prints out your query in an SQL-similar "language" (I'm not using AND and OR, or = for &&, ||, and == respectivley)
 
 ### <ins>**USAGE:** </ins>
 
@@ -33,6 +28,7 @@ For information on how to use the interface, look at details/Usage. The followin
 * **switch_field** - edits a field in a table (changes name and/or data type). This should be a safe function, as it should update all of the records in the table too. An input of field_num = -1 adds appends a field, an input of data_size = 0 does keeps the size of the field that is being switched, an input of field_name = NULL preserves the field being switched's name.
 * **switch_record** - writes a record to the table at the desired location. An input of record_num = -1 appends the record, and any attempt to switch a record past the end of the table appends the record, too. 
 * **write_record_fields** - writes given record fields to a given file. It will be implemented more later.
+* **get_field** - Gets a field from a table file.
 
 **Table Navigation Functions:**
 * **get_num_of_fields** - returns the number of fields in a table (mostly used by get_fields)
@@ -50,6 +46,7 @@ For information on how to use the interface, look at details/Usage. The followin
 **Database Review Functions:**
 * **poop** - prints every record in a table. If one is specified, print the output to a markdown file. (In order to not dump a table, dump_file should be NULL)
 * **diahrrea** - poops every table in a database.
+* **write_table** - Writes a table to a file based on a previous file and field and record maps.
 
 **Queries:**
 * **get_record_field** - Gets the data from a field in a specified record. This data, and other meadata is stored in a struct of type `struct record_field`
@@ -57,6 +54,8 @@ For information on how to use the interface, look at details/Usage. The followin
 * **get_all_records** - Gets very record in a table, and stores it as an array of arrays of record_fields (a record is an array of record_fields, hence an array of records is an array of arrays of record_fields)
 * **quicksort_record_fields** - Sorts an input field of a table, and stores the sorted list in a sort file.
 * **binary_search_sort_file** - Executes a query and returns a map of valid records.
+* **print_record_map** - Prints a record map to stdout
+* **execute_query** - Gets the final record map from a query structure.
 
 **Menu:**
 Only one of these functions is public. The rest are only utilized by this function.
@@ -98,7 +97,7 @@ Here are some of my ideas for the future:
 * An API for Java?
 
 ### <ins>**NOTES:**</ins>
-None of what is in this current version (v0.4.4) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
+None of what is in this current version (v0.5.0) is final. Hopefully the finished version will be drastically different than this one. My end goal is to create a semi-useful system for creating and managing databases. I have very little prior knowledge on databases, and chances are this program will be utterly useless. But we can all hope, can't we?
 
 *** 
 

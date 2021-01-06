@@ -46,7 +46,7 @@ void print_title(IN int row_length){
                         "##      ##   ##    ##   ##         ##    ##  ##   ### ## ",
                         "#########     ##### ##  ##         ##    ##    ########  ",
                         "                                                      ###"
-                    };
+                    };  
     int i = 0;
     int j = 0;
     int line_len = 0;
@@ -87,7 +87,7 @@ void print_title(IN int row_length){
     
     print_indent_line(0, row_length, true, 0,200,255);
     print_color("`", BG,0,0,0);
-    simple_center_text(subtitle_len, row_length-4);
+    simple_center_text(subtitle_len, row_length);
     print_color("``~~", BG,0,200,255, FG,0,0,255, BOLD, ITALIC);
     printf("%s", subtitle);
     print_color("~\n", RESET);
@@ -620,7 +620,6 @@ error_code_t click_handler(int cursor_pos){
             /*if(ERROR_CODE_SUCCESS != error_check){
                 goto cleanup;
             }*/
-
             break;
 
         case 8:
@@ -684,10 +683,11 @@ int print_menu(){
     int cursor_pos = 0;
     int error_check = 0;
     bool valid_input = false;
+    bool continue_running = true;
 
     change_echo(false);
 
-    while(true){
+    while(continue_running){
         valid_input = false;
         if(cursor_pos > 10){
             cursor_pos = 0;
@@ -719,6 +719,10 @@ int print_menu(){
                     }
                 }
                 change_echo(false);
+            }
+            else if('q' == input){
+                continue_running = false;
+                valid_input = true;
             }
         }
     }

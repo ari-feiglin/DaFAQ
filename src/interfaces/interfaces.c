@@ -21,8 +21,8 @@ int create_table_interface(IN char * table_name){
     char prompt[STRING_LEN] = {0};
     char * data_type_list = "char, int, string, boolean";
     char * input_mask = NULL;
-    field new_field = {0};
-    field * fields = NULL;
+    field_t new_field = {0};
+    field_t * fields = NULL;
 
     print_indent_line(2, row_len, true, 0,200,255);
     print_color("`\n~", RESET, BG,0,0,0);
@@ -62,7 +62,7 @@ int create_table_interface(IN char * table_name){
             break;
         }
         
-        fields = realloc(fields, (num_of_fields+1) * sizeof(field));
+        fields = realloc(fields, (num_of_fields+1) * sizeof(field_t));
         if(NULL == fields){
             print_indent_line(1, row_len, true, 255,0,0);
             print_color("`  ~", BG,0,0,0, RED);
@@ -72,7 +72,7 @@ int create_table_interface(IN char * table_name){
             num_of_fields = -1;
             goto cleanup;
         }
-        memset(fields + num_of_fields*sizeof(field), 0, sizeof(field));
+        memset(&fields[num_of_fields], 0, sizeof(field_t));
 
         if(NULL != field_data_type){
             free(field_data_type);
@@ -198,7 +198,7 @@ int switch_record_interface(IN char * table_name, int record_num){
     int row_len = 75;
     bool has_mask = false;
     bool valid_mask = false;
-    field * fields = NULL;
+    field_t * fields = NULL;
     int * input_lens = NULL;
     char * input = NULL;
     char ** field_inputs = NULL;
@@ -528,256 +528,358 @@ cleanup:
  */
 error_code_t query_interface(char * table_name, char * sort_file_name){
     error_code_t return_value = ERROR_CODE_UNINTIALIZED;
-    int error_check = 0;
-    int table_fd = -1;
-    int sort_fd = -1;
+    int row_len = 75;
     int num_of_fields = 0;
     int num_of_records = 0;
-    int field_index = -1;
-    int data = 0;
     int i = 0;
     int j = 0;
     int difference = 0;
-    int row_len = 75;
+    int field_index = 0;
     bool continue_loop = true;
-    bool can_free_target_data = true;
-    bool can_free_record = false;
-    operators operator = -1;
+    bool inputting_conditions = true;
     char * input = NULL;
-    char * field_name = NULL;
-    char * target_data = NULL;
-    char input_print[STRING_LEN+1] = {0};
-    char * print_text = NULL;
-    field * fields = NULL;
-    bool * valid_record_map = NULL;
-    record_field * record = NULL;
+    int temp_data[MAX_CALLS] = {0};
+    int freeable_targets[MAX_CALLS] = {0};
+    query_t query = {0};
+    field_t * fields = NULL;
+    char * query_file_name = NULL;
 
     print_indent_line(2, row_len, true, 0,200,255);
-    print_color("`\n~", RESET, BG,0,0,0);
+    print_color("~\n", RESET);
     print_indent_line(1, row_len, true, 0,200,255);
-    print_color("`\n", RESET);
+    print_color("~\n", RESET);
 
-    table_fd = open(table_name, O_RDWR);
-    if(-1 == table_fd){
-        print_indent_line(1, row_len, true, 255,0,0);
-        print_color("`  ~~", BG,0,0,0, RED, BOLD);
-        fflush(stdout);
+    query.table_fd = open(table_name, O_RDONLY);
+    if(-1 == query.table_fd){
         perror("QUERY_INTERFACE: Open error");
-        print_color("~", RESET);
         return_value = ERROR_CODE_COULDNT_OPEN;
         goto cleanup;
     }
 
-    sort_fd = open(sort_file_name, O_RDWR);
-    if(-1 == sort_fd){
-        print_indent_line(1, row_len, true, 255,0,0);
-        print_color("`  ~~", BG,0,0,0, RED, BOLD);
-        fflush(stdout);
+    query.sort_fd = open(sort_file_name, O_RDWR);
+    if(-1 == query.sort_fd){
         perror("QUERY_INTERFACE: Open error");
-        print_color("~", RESET);
         return_value = ERROR_CODE_COULDNT_OPEN;
         goto cleanup;
     }
 
-    num_of_fields = get_fields(table_fd, &fields, false);
+    num_of_fields = get_fields(query.table_fd, &fields, false);
     if(-1 == num_of_fields){
         return_value = ERROR_CODE_COULDNT_GET_NUM_OF_FIELDS;
         goto cleanup;
     }
 
-    num_of_records = get_num_of_records(table_fd, num_of_fields, false);
+    num_of_records = get_num_of_records(query.table_fd, num_of_fields, false);
     if(-1 == num_of_records){
         return_value = ERROR_CODE_COULDNT_GET_NUM_OF_RECORDS;
         goto cleanup;
     }
 
-    print_indent_line(1, row_len, true, 0,200,255);
-    print_color("`  ~~CREATING QUERY~\n", BG,0,0,0, UNDERLINE, BOLD, RESET);
-    print_indent_line(1, row_len, true, 0,200,255);
-    printf("\n");
-    
-    while(continue_loop){
-        print_indent_line(1, row_len, true, 0,200,255);
-        print_color("`  ~Field Name:~` ", BG,0,0,0, BOLD, RESET, BG,0,0,0);
+    for(i=0; i<MAX_CALLS && inputting_conditions; i++){
+        continue_loop = true;
+        while(continue_loop){
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~~  ~SELECT~ Field Name:~~ ", BG_BLACK, BOLD, BLUE, WHITE, RESET, BG_BLACK);
+            get_raw_input(NULL, &input);
 
-        error_check = get_raw_input(NULL, &field_name);
-        if(-1 == error_check){
-            return_value = ERROR_CODE_COULDNT_GET_INPUT;
-            goto cleanup;
-        }
-        print_color("~", RESET);
-        
-        difference = strncmp(field_name, "quit", NAME_LEN);
-        if(0 == difference){
-            return_value = ERROR_CODE_SUCCESS;
-            goto cleanup;
-        }
-
-        for(i=0; i<num_of_fields; i++){
-            difference = strncmp(field_name, fields[i].name, NAME_LEN);
+            difference = strncmp(input, "quit", NAME_LEN);
             if(0 == difference){
-                field_index = i;
-                continue_loop = false;
+                inputting_conditions = false;
                 break;
             }
-        }
-        if(-1 == field_index){
-            print_indent_line(1, row_len, true, 200,0,0);
-            print_color("`  ~~INVALID FIELD NAME~\n", BG,0,0,0, RED, BOLD, RESET);
-        }
-    }
 
-    print_indent_line(1, row_len, true, 0,200,255);
-    print_color("`  ~Target Data:~` ", BG,0,0,0, BOLD, RESET, BG,0,0,0);
-    error_check = get_raw_input(NULL, &target_data);
-    if(-1 == error_check){
-        return_value = ERROR_CODE_COULDNT_GET_INPUT;
-        goto cleanup;
-    }
-    print_color("~", RESET);
-
-    switch(fields[field_index].data_len){
-        case STRING:
-            break;
-
-        case INT:
-            data = (int)strtol(target_data, NULL, 10);
-            free(target_data);
-            can_free_target_data = false;
-            target_data = (char *)&data;
-            break;
-
-        case CHAR:
-            data = (char)strtol(target_data, NULL, 10);
-            free(target_data);
-            can_free_target_data = false;
-            target_data = (char *)&data;
-            break;
-
-        default:
-            print_indent_line(1, row_len, true, 200,0,0);
-            print_color("`  ~~INVALID DATATYPE~\n", BG,0,0,0, RED, BOLD, RESET);
-            return_value = ERROR_CODE_INVALID_DATATYPE;
-            goto cleanup;
-    }
-
-    continue_loop = true;
-    while(continue_loop){
-        print_indent_line(1, row_len, true, 0,200,255);
-        print_color("`  ~Operation:~` ", BG,0,0,0, BOLD, RESET, BG,0,0,0);
-        error_check = get_raw_input(NULL, &input);
-        if(-1 == error_check){
-            return_value = ERROR_CODE_COULDNT_GET_INPUT;
-            goto cleanup;
-        }
-        print_color("~", RESET);
-        
-        difference = strncmp(input, "quit", NAME_LEN);
-        if(0 == difference){
-            return_value = ERROR_CODE_SUCCESS;
-            goto cleanup;
-        }
-
-        for(i=0; i<num_of_operations; i++){
-            difference = strncmp(input, operations[i], NAME_LEN);
+            difference = strncmp(input, "*", NAME_LEN);
             if(0 == difference){
-                operator = i;
-                continue_loop = false;
+                for(j=0; j<num_of_fields; j++){
+                    query.selected_field_map[j] = true;
+                }
+                inputting_conditions = false;
                 break;
             }
+
+            field_index = -1;
+            for(j=0; j<num_of_fields; j++){
+                difference = strncmp(fields[j].name, input, STRING_LEN);
+                if(0 == difference){
+                    field_index = j;
+                    break;
+                }
+            }
+
+            if(-1 != field_index){
+                if(!query.selected_field_map[field_index]){
+                    query.selected_field_map[field_index] = true;
+                }
+
+                continue_loop = false;
+            }
+            else{
+                print_indent_line(1, row_len, true, 255,0,0);
+                print_color("~~~  INVALID FIELD NAME!~\n", BG_BLACK, RED, BOLD, RESET);
+            }
         }
-        if(-1 == operator){
-            print_indent_line(1, row_len, true, 200,0,0);
-            print_color("`  ~~INVALID OPERATOR~\n", BG,0,0,0, RED, BOLD, RESET);
+    }
+
+    inputting_conditions = true;
+
+    for(i=0; i<MAX_CALLS && inputting_conditions; i++){
+        continue_loop = true;
+        while(continue_loop){
+            print_indent_line(1, row_len, true, 0,200,255);
+            print_color("~~  ~WHERE~ Field Name:~~ ", BG_BLACK, BOLD, GREEN, WHITE, RESET, BG_BLACK);
+            get_raw_input(NULL, &input);
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                inputting_conditions = false;
+                break;
+            }
+
+            field_index = -1;
+            for(j=0; j<num_of_fields; j++){
+                difference = strncmp(fields[j].name, input, STRING_LEN);
+                if(0 == difference){
+                    field_index = j;
+                    break;
+                }
+            }
+
+            if(-1 != field_index){
+                query.conditions[i].field_index = field_index;
+                query.num_of_conditions++;
+
+                if(!query.selected_field_map[field_index]){
+                    query.num_of_fields++;
+                }
+
+                continue_loop = false;
+            }
+            else{
+                print_indent_line(1, row_len, true, 255,0,0);
+                print_color("~~~  INVALID FIELD NAME!~\n", BG_BLACK, RED, BOLD, RESET);
+            }
         }
-    }
 
-    return_value = get_valid_record_map(table_fd, sort_fd, target_data, operator, field_index, num_of_records, &valid_record_map);
-    if(ERROR_CODE_SUCCESS != return_value){
-        goto cleanup;
-    }
+        if(!inputting_conditions){
+            break;
+        }
 
-    printf("\n");
-    for(i=0; i<num_of_fields; i++){
-        rect_text(fields[i].name, &print_text, NAME_LEN);
-        print_color("`~", BG,0,0,255, BOLD);
-        printf("%s", print_text);
-        print_color("~ ", RESET);
-    }
+        continue_loop = true;
+        while(continue_loop){
+            print_indent_line(1, row_len, true, 0, 200, 255);
+            print_color("~~  Operator:~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+            get_raw_input(NULL, &input);
 
-    printf("\n");
-    for(i=0; i<num_of_records; i++){
-        if(valid_record_map[i]){
-            if(NULL != record){
-                for(j=0; j<num_of_fields; j++){     //I accidentally used 
-                    if(NULL != record[j].data){
-                        free(record[j].data);
+            query.conditions[i].operator = -1;
+            for(j=0; j<num_of_operations; j++){
+                difference = strncmp(input, operations[j], NAME_LEN);
+                if(0 == difference){
+                    query.conditions[i].operator = j;
+                    continue_loop = false;
+                    break;
+                }
+            }
+            if(-1 == query.conditions[i].operator){
+                print_indent_line(1, row_len, true, 255,0,0);
+                print_color("~~~  INVALID OPERATOR!~\n", BG_BLACK, RED, BOLD, RESET);
+            }
+        }
+
+        print_indent_line(1, row_len, true, 0, 200, 255);
+        print_color("~~  Value? ([y]/n)~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+        get_raw_input(NULL, &input);
+
+        difference = strncmp(input, "n", NAME_LEN);
+        if(0 != difference){
+            query.conditions[i].target_id = INTEGRAL;
+
+            print_indent_line(1, row_len, true, 0, 200, 255);
+            print_color("~~  Target Value:~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+            get_raw_input(NULL, &input);
+
+            switch(fields[query.conditions[i].field_index].data_len){
+                case STRING:
+                    query.conditions[i].target.target_data = malloc(strnlen(input, STRING_LEN) + 1);
+                    if(NULL == query.conditions[i].target.target_data){
+                        perror("QUERY_INTERFACE: Malloc error");
+                        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+                        goto cleanup;
+                    }
+                    memcpy(query.conditions[i].target.target_data, input, strnlen(input, STRING_LEN) + 1);
+                    freeable_targets[i] = true;
+                    break;
+
+                case INT:
+                    temp_data[i] = (int)strtol(input, NULL, 10);
+                    query.conditions[i].target.target_data = (char *)&(temp_data[i]);
+                    break;
+
+                case CHAR:
+                    temp_data[i] = (char)strtol(input, NULL, 10);
+                    query.conditions[i].target.target_data = (char *)&(temp_data[i]);
+                    break;
+
+                default:
+                    print_indent_line(1, row_len, true, 255,0,0);
+                    print_color("~~~  INVALID DATATYPE!~\n", BG_BLACK, RED, BOLD, RESET);
+                    return_value = ERROR_CODE_INVALID_DATATYPE;
+                    goto cleanup;
+                    break;          //      :)
+            }
+        }
+        else{
+            query.conditions[i].target_id = FIELD;
+
+            continue_loop = true;
+            while(continue_loop){
+                print_indent_line(1, row_len, true, 0,200,255);
+                print_color("~~  Target Field:~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+                get_raw_input(NULL, &input);
+
+                difference = strncmp(input, "quit", NAME_LEN);
+                if(0 == difference){
+                    inputting_conditions = false;
+                    break;
+                }
+
+                field_index = -1;
+                for(j=0; j<num_of_fields; j++){
+                    difference = strncmp(fields[j].name, input, STRING_LEN);
+                    if(0 == difference){
+                        field_index = j;
+                        break;
                     }
                 }
-                free(record);
-            }
 
-            return_value = get_record(table_fd, &record, i, false);
-            if(ERROR_CODE_SUCCESS != return_value){
-                goto cleanup;
-            }
+                if(-1 != field_index){
+                    query.conditions[i].target.target_field_index = field_index;
 
-            for(j=0; j<num_of_fields; j++){ 
-                switch(record[j].data_len){
-                    case STRING:
-                        sprintf(input_print, "%s", record[j].data);
-                        break;
-                    case INT:
-                        sprintf(input_print, "%i", *((int *)record[j].data));
-                        break;
-                    case CHAR:
-                        sprintf(input_print, "%i", *((char *)record[j].data));
-                        break;
-                    default:
-                        print_indent_line(1, row_len, true, 200,0,0);
-                        print_color("`  ~~INVALID DATATYPE~\n", BG,0,0,0, RED, BOLD, RESET);
-                        return_value = ERROR_CODE_INVALID_DATATYPE;
-                        goto cleanup;
+                    continue_loop = false;
                 }
-
-                rect_text(input_print, &print_text, NAME_LEN);
-                print_color("~`~", BG_B_WHITE, FG,0,0,255, BOLD);
-                printf("%s", print_text);
-                print_color("~ ", RESET);
+                else{
+                    print_indent_line(1, row_len, true, 255,0,0);
+                    print_color("~~~  INVALID FIELD NAME!~\n", BG_BLACK, RED, BOLD, RESET);
+                }
             }
-            printf("\n");
+        }
+
+        continue_loop = true;
+        while(continue_loop){
+            print_indent_line(1, row_len, true, 0, 200, 255);
+            print_color("~~  Logical Operator:~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+            get_raw_input(NULL, &input);
+
+            difference = strncmp(input, "quit", NAME_LEN);
+            if(0 == difference){
+                inputting_conditions = false;
+                break;
+            }
+
+            difference = strncmp(input, "||", NAME_LEN);
+            if(0 == difference){
+                query.conditions[i].logical_operator = OR;
+                break;
+            }
+
+            difference = strncmp(input, "&&", NAME_LEN);
+            if(0 == difference){
+                query.conditions[i].logical_operator = AND;
+                break;
+            }
+
+            print_indent_line(1, row_len, true, 255,0,0);
+            print_color("~~~  INVALID LOGICAL OPERATOR!~\n", BG_BLACK, RED, BOLD, RESET);
         }
     }
-    printf("\n");
 
-    return_value = ERROR_CODE_SUCCESS;
+    print_indent_line(1, row_len, true, 0, 200, 255);
+    puts("");
+    print_indent_line(1, row_len, true, 0, 200, 255);
+    print_color("~~  Query File Name:~~ ", BG_BLACK, BOLD, RESET, BG_BLACK);
+    get_raw_input(NULL, &query_file_name);
+
+    difference = strncmp(query_file_name, "quit", NAME_LEN);
+    if(0 == difference){
+        free(query_file_name);
+        query_file_name = NULL;
+    }
+
+    print_indent_line(1, row_len, true, 0,200,255);
+    puts("");
+    print_indent_line(1, row_len, true, 0,200,255);
+    puts("");
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~  ~~YOUR QUERY:~\n", BG_BLACK, UNDERLINE, BOLD, RESET);
+    print_indent_line(1, row_len, true, 0,200,255);
+    puts("");
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~~~  SELECT~~ ", BG_BLACK, BLUE, BOLD, RESET, BG_BLACK);
+
+    for(i=0; i<num_of_fields; i++){
+        if(query.selected_field_map[i]){
+            printf("%s, ", fields[i].name);
+        }
+    }
+
+    print_color("~\n", RESET);
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~~  ~FROM~~ ", BG_BLACK, YELLOW, BOLD, RESET, BG_BLACK);
+    printf("%s", table_name);
+
+    print_color("~\n", RESET);
+    print_indent_line(1, row_len, true, 0,200,255);
+    print_color("~~~  WHERE~~ ", BG_BLACK, GREEN, BOLD, RESET, BG_BLACK);
+
+    for(i=0; i<query.num_of_conditions; i++){
+        printf("%s ", fields[query.conditions[i].field_index].name);
+        printf("%s ", operations[query.conditions[i].operator]);
+
+        if(INTEGRAL == query.conditions[i].target_id){
+            switch(fields[query.conditions[i].field_index].data_len){
+                case STRING: printf("%s ", query.conditions[i].target.target_data); break;
+                case INT: printf("%i ", *((int *)query.conditions[i].target.target_data)); break;
+                case CHAR: printf("%i ", *((char *)query.conditions[i].target.target_data)); break;
+            }
+        }
+        else if(FIELD == query.conditions[i].target_id){
+            printf("[%s] ", fields[query.conditions[i].target.target_field_index].name);
+        }
+        
+        if(i != query.num_of_conditions - 1){
+            switch(query.conditions[i].operator){
+                case AND: printf("&& "); break;
+                case OR: printf("|| "); break;
+            }
+        }
+    }
+    puts("");
+    print_indent_line(1, row_len, true, 0,200,255);
+    puts("");
+
+    while(true){
+        return_value = execute_query(query, query_file_name);
+        if(ERROR_CODE_EXISTS == return_value){
+            print_indent_line(1, row_len, true, 0, 200, 255);
+            print_color("~~  ~ERROR: FILE EXISTS~ Query File Name:~~ ", BG_BLACK, BOLD, RED, WHITE, RESET, BG_BLACK);
+            get_raw_input(NULL, &query_file_name);
+            continue;
+        }
+        break;
+    }
 
 cleanup:
-    if(NULL != fields)
+    if(NULL != fields){
         free(fields);
-    if(NULL != input)
+    }
+    if(NULL != input){
         free(input);
-    if(NULL != field_name)
-        free(field_name);
-    if(NULL != target_data && can_free_target_data)
-        free(target_data);
-    if(NULL != print_text)
-        free(print_text);
-    if(NULL != valid_record_map)
-        free(valid_record_map);
-        
-    if(NULL != record){
-        for(i=0; i<num_of_fields; i++){
-            if(NULL != record[i].data)
-                free(record[i].data);
-        }
-        free(record);
     }
 
-    if(-1 != table_fd)
-        close(table_fd);
-    if(-1 != sort_fd)
-        close(sort_fd);
+    for(i=0; i<MAX_CALLS; i++){
+        if(freeable_targets[i]){
+            free(query.conditions[i].target.target_data);
+        }
+    }
 
     print_indent_line(1, row_len, true, 0,200,255);
     print_color("~\n", RESET);

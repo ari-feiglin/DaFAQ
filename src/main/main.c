@@ -9,6 +9,8 @@ int extension_len = 0;
 
 int main(int argc, char ** argv){
     int error_check = 0;
+    query_t query = {0};
+
     if(argc > 1){
         error_check = mkdir(argv[1], 0);
         if(-1 == error_check){

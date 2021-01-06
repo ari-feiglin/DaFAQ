@@ -11,7 +11,7 @@
  * @notes: An input of dump_file = NULL will print the table to stdout and truncate will be ignored.
  */
 int poop(IN char * table_name, IN char * dump_file, IN bool truncate){
-    field * fields = NULL;
+    field_t * fields = NULL;
     int error_check = 0;
     int num_of_fields = 0;
     int num_of_records = -1;
@@ -335,4 +335,139 @@ cleanup:
         free(directory);
     }
     return num_of_tables;
+}
+
+/**
+ * @brief: Writes the output of a query to a table file
+ * @param[IN] table_fd: The file descriptor of the table file that the query was performed on
+ * @param[IN] file_name: The name of the file to create
+ * @param[IN] num_of_fields: The number of files in the table (of table_fd)
+ * @param[IN] field_map: A map of all of the valid/SELECTed fields
+ * @param[IN] num_of_records: The number of records in the table (of table_fd)
+ * @param[IN] record_map: A map of all of the records that were validated by the query
+ * 
+ * @returns: ERROR_CODE_SUCCESS on success, else an indicative error code
+ */
+error_code_t write_table(IN int table_fd, IN char * file_name, IN int num_of_fields, IN bool * field_map, IN int num_of_records, IN bool * record_map){
+    error_code_t return_value = ERROR_CODE_UNINTIALIZED;
+    field_t * fields = NULL;
+    record_field_t * record = NULL;
+    int error_check = 0;
+    int num_of_valid_fields = 0;
+    int num_of_valid_records = 0;
+    int record_len = 0;
+    int i = 0;
+    int j = 0;
+    int k = 0;
+    int new_table_fd = 0;
+
+    for(i=0; i<num_of_fields; i++){
+        if(field_map[i]){
+            num_of_valid_fields++;
+        }
+    }
+
+    for(i=0; i<num_of_records; i++){
+        if(record_map[i]){
+            num_of_valid_records++;
+        }
+    }
+
+    fields = calloc(num_of_valid_fields, sizeof(field_t));
+    if(NULL == fields){
+        perror("WRITE_TABLE: Calloc error");
+        return_value = ERROR_CODE_COULDNT_ALLOCATE_MEMORY;
+        goto cleanup;
+    }
+    memset(fields, 0, num_of_valid_fields * sizeof(field_t));
+
+    for(i=0; i<num_of_fields; i++){
+        if(field_map[i]){
+            return_value = get_field(table_fd, &(fields[j]), i);
+            if(ERROR_CODE_SUCCESS != return_value){
+                goto cleanup;
+            }
+            j++;
+        }
+    }
+
+    errno = 0;
+    new_table_fd = open(file_name, O_RDWR | O_TRUNC | O_EXCL | O_CREAT, 0666);
+    if(-1 == new_table_fd && EEXIST != errno){
+        perror("WRITE_TABLE: Open error");
+        return_value = ERROR_CODE_COULDNT_OPEN;
+        goto cleanup;
+    }
+    else if(EEXIST == errno){
+        return_value = ERROR_CODE_EXISTS;
+        goto cleanup;
+    }
+
+    error_check = write(new_table_fd, magic, magic_len);
+    if(-1 == error_check){
+        perror("WRITE_TABLE: Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    error_check = write(new_table_fd, &num_of_valid_fields, sizeof(num_of_valid_fields));
+    if(-1 == error_check){
+        perror("WRITE_TABLE: Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    error_check = write(new_table_fd, fields, num_of_valid_fields * sizeof(field_t));
+    if(-1 == error_check){
+        perror("WRITE_TABLE: Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    error_check = write(new_table_fd, &num_of_valid_records, sizeof(num_of_valid_records));
+    if(-1 == error_check){
+        perror("WRITE_TABLE: Write error");
+        return_value = ERROR_CODE_COULDNT_WRITE;
+        goto cleanup;
+    }
+
+    record_len = get_len_of_record(table_fd, false);
+    if(-1 == record_len){
+        return_value = ERROR_CODE_COULDNT_GET_LEN_OF_RECORD;
+        goto cleanup;
+    }
+
+    for(i=0, j=0; i<num_of_records; i++){
+        if(record_map[i]){
+            return_value = get_record(table_fd, &record, i, false);
+            if(ERROR_CODE_SUCCESS != return_value){
+                goto cleanup;
+            }
+
+            record->record_num = j;
+            j++;
+
+            error_check = write_record_fields(new_table_fd, num_of_fields, record, false);
+            if(-1 == error_check){
+                perror("WRITE_TABLE: Write error");
+                return_value = ERROR_CODE_COULDNT_WRITE;
+                goto cleanup;
+            }
+
+            for(k=0; k<num_of_fields; k++){
+                free(record[k].data);
+            }
+
+            free(record);
+        }
+    }
+
+    return_value = ERROR_CODE_SUCCESS;
+
+cleanup:
+    if(NULL != fields){
+        free(fields);
+    }
+
+    return return_value;
 }

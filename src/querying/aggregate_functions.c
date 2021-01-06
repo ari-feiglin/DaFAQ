@@ -32,7 +32,7 @@ int SUM(int fd, int field_index, int num_of_records, bool * valid_record_map){
     int sum = -1;
     int i = 0;
     int num_of_fields = 0;
-    record_field curr_record_field = {0};
+    record_field_t curr_record_field = {0};
     int error_check = 0;
 
     if(-1 == num_of_records){
